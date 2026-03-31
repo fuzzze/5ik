@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESP Round Display</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0e0e0e;color:#e0e0e0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px}
+.container{max-width:520px;width:100%;text-align:center}
+.logo{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,#1a1a1a 60%,#0e0e0e);border:3px solid #FF4040;display:flex;align-items:center;justify-content:center;margin:0 auto 32px;box-shadow:0 0 40px rgba(255,64,64,.15)}
+.logo svg{width:60px;height:60px}
+h1{font-size:1.8em;font-weight:700;margin-bottom:8px;letter-spacing:-.02em}
+h1 span{color:#FF4040}
+.sub{color:#666;font-size:.95em;margin-bottom:36px;line-height:1.5}
+.features{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:36px;text-align:left}
+.feat{background:#141414;border:1px solid #1e1e1e;border-radius:10px;padding:16px}
+.feat h3{font-size:.8em;color:#FF4040;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.feat p{font-size:.85em;color:#999;line-height:1.4}
+.btn{display:inline-block;padding:12px 28px;background:#FF2020;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:.95em;transition:background .2s}
+.btn:hover{background:#cc1010}
+.footer{margin-top:48px;font-size:.78em;color:#333}
+@media(max-width:480px){.features{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="logo">
+<svg viewBox="0 0 24 24" fill="none" stroke="#FF4040" stroke-width="2" stroke-linecap="round">
+<path d="M14 4v6a2 2 0 0 0 2 2h4"/><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
+<path d="M12 8v4l2 2"/>
+</svg>
+</div>
+<h1>ESP <span>Round</span> Display</h1>
+<p class="sub">IoT-термометр на ESP32-S2 с круглым дисплеем 240x240.<br>MQTT, Telegram-алерты, веб-интерфейс, OTA-обновления.</p>
+<div class="features">
+<div class="feat"><h3>MQTT</h3><p>Подключение к любому MQTT-брокеру с поддержкой TLS и авторизации</p></div>
+<div class="feat"><h3>Telegram</h3><p>Алерты при выходе температуры за пределы нормы</p></div>
+<div class="feat"><h3>Безопасность</h3><p>Flash Encryption + Secure Boot v2 для защиты прошивки</p></div>
+<div class="feat"><h3>OTA</h3><p>Автоматические обновления прошивки по воздуху</p></div>
+</div>
+<a class="btn" href="https://github.com/fuzzze/5ik/releases">Скачать прошивку</a>
+<div class="footer">&copy; 2025-2026 ESP Round Display Project</div>
+</div>
+</body>
+</html>

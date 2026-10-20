@@ -50,7 +50,13 @@ key.shadow.bias = -0.0004;
 key.shadow.normalBias = 0.3;
 key.shadow.radius = 4;
 scene.add(key);
-scene.add(new THREE.HemisphereLight(0xffffff, 0xdfe3e8, 0.6));
+scene.add(new THREE.HemisphereLight(0xffffff, 0xdfe3e8, 0.45));
+// второй свет — скользящий слева-сверху от камеры, ходит вместе с ней: рельеф (ступеньки,
+// фаски, логотип) читается с любой стороны, а не только там, куда светит основной
+const rim = new THREE.DirectionalLight(0xffffff, 0.9);
+rim.position.set(-160, 90, 40);          // в осях камеры; цель — центр модели (0, 0, 0)
+camera.add(rim);
+scene.add(camera);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;

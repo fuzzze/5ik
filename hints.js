@@ -72,12 +72,15 @@ export class Hints {
     root.addEventListener('pointerdown', e => e.stopPropagation());
   }
 
-  add(id, pos) {
+  // onPress — действие по клику на маркер вместо открытия плашки (маркер на макушке
+  // стоит там, где нажимают кнопку: клик по нему — тот же клик по макушке)
+  add(id, pos, onPress) {
     const el = document.createElement('div');
     el.className = 'hint';
     el.innerHTML = `<button aria-label="">${ICON}</button><span class="hint-label"></span>`;
     const btn = el.querySelector('button');
     btn.onclick = () => {         // касание на телефоне: открыть/закрыть
+      if (onPress) { onPress(); el.classList.add('open'); return; }
       const open = !el.classList.contains('open');
       for (const it of this.items.values()) it.el.classList.remove('open');
       el.classList.toggle('open', open);

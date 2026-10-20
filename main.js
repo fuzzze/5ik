@@ -113,7 +113,7 @@ const PART_HINTS = {
   buzzer:  [1.3, -22.2, -12, 'buzzer'],
   back:    [0, 21.3, -10, 'back'],         // верх арки задней части
 };
-hints.add('top', () => modelPoint(0, 21.3, -6));
+hints.add('top', () => modelPoint(0, 21.3, -6), () => pressTop());   // маркер стоит на макушке: клик — нажатие
 for (const [id, [px, py]] of Object.entries(SCREEN_HINTS)) hints.add(id, () => screenPoint(px, py));
 for (const [id, [x, y, z, g]] of Object.entries(PART_HINTS)) hints.add(id, () => modelPoint(x, y, z, g));
 
@@ -235,10 +235,15 @@ renderer.domElement.addEventListener('pointerup', e => {
   if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;  // это было вращение
   down = null;
   if (!screen || !hitTop(e)) return;
+  pressTop();
+});
+
+function pressTop() {
+  if (!screen) return;
   pressT = performance.now() / 1000;
   hideHint();
   bootClick();
-});
+}
 
 // ─── кнопка Boot: клики как в loop() прошивки ───────────────────────────────
 // Короткие нажатия копятся, пока между ними < 400 мс; через 400 мс тишины:

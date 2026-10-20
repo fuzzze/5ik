@@ -185,24 +185,25 @@ function cableUp() {          // на боку: гнездо смотрит вв
 function cableSide() {        // вверх дном: кабель выходит вбок и изгибается вверх (−Y модели)
   const g = plug();
   g.add(tube(new THREE.CatmullRomCurve3([at(43.5), at(58), at(70, -7), at(77, -24), at(80, -60), at(82, -240)]), 1.8));
-  g.add(clothespin(50));
+  g.add(clothespin(47));
   return g;
 }
 
 // прищепка, зажавшая кабель сразу за штекером: две планки 72 × 10 × 6.5 обнимают
 // кабель спереди и сзади, губки — у кабеля, пружина посередине. Строится вдоль X
 // своей системы (0 — губки) и поворачивается вверх по миру (−Y модели).
-function clothespin(x) {
+function clothespin(x, k = 0.5) {   // k — масштаб от натуральной прищепки 72 мм
   const g = new THREE.Group();
-  const gap = 1.8;                                  // радиус кабеля: губки сжимают его
+  const gap = 1.8;                                  // радиус кабеля: губки сжимают его, не масштабируется
+  const L = 72 * k, W = 10 * k, H = 6.5 * k;
   for (const s of [-1, 1]) {
     // внутренняя грань губки — у кабеля, наружная сужается к кончику
-    const st = (x, h) => ({ x, w: 10, h, r: 0.6, dz: s * (gap + h / 2) });
-    g.add(loft([st(0, 3.6), st(10, 6.5), st(72, 6.5)], { cy: 0, cz: 0, edges: [0, 1, 2] }));
+    const st = (x, h) => ({ x, w: W, h, r: 0.6 * k, dz: s * (gap + h / 2) });
+    g.add(loft([st(0, 3.6 * k), st(10 * k, H), st(L, H)], { cy: 0, cz: 0, edges: [0, 1, 2] }));
   }
-  for (const px of [33, 38])                        // пружина — бандаж вокруг обеих планок
-    g.add(roundRect(new THREE.Vector3(px, 0, 0), Y, Z, 11, 2 * (gap + 6.5) + 1, 1.2));
-  g.position.set(x, PORT.y + 4, PORT.z);            // губки — на 4 мм ниже кабеля (по миру)
+  for (const px of [33 * k, 38 * k])                // пружина — бандаж вокруг обеих планок
+    g.add(roundRect(new THREE.Vector3(px, 0, 0), Y, Z, W + 1, 2 * (gap + H) + 1, 1.2 * k));
+  g.position.set(x, PORT.y + 4 * k, PORT.z);        // губки — чуть ниже кабеля (по миру)
   g.rotation.z = -Math.PI / 2;                      // своя X → −Y модели (вверх по миру)
   return g;
 }

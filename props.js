@@ -156,7 +156,7 @@ const at = (x, dy = 0) => new THREE.Vector3(x, PORT.y + dy, PORT.z);
 // ─── сцены ───────────────────────────────────────────────────────────────────
 function surface() {
   const g = new THREE.Group();
-  g.add(roundRect(new THREE.Vector3(0, FLOOR_Y, -8), X, Z, 124, 80, 8));
+  g.add(roundRect(new THREE.Vector3(0, FLOOR_Y, -8), X, Z, 186, 120, 0));   // стол — простой прямоугольник
   return g;
 }
 

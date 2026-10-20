@@ -88,7 +88,7 @@ function setLang(l) {
   document.getElementById('hint').textContent = HINT[l];
   hints.setLang(l);
   applySiteLang(l);
-  langBar.value = l;
+  for (const b of langBar.children) b.setAttribute('aria-pressed', b.dataset.lang === l);
   lang = l;
 }
 // ─── подсказки ──────────────────────────────────────────────────────────────
@@ -136,8 +136,14 @@ function updateHints() {
 
 let lang = hash.get('lang') || (navigator.language || 'en').slice(0, 2);
 const langBar = document.getElementById('lang');
-for (const l of LANGS) langBar.add(new Option(LANG_NAMES[l] || l.toUpperCase(), l));
-langBar.onchange = () => setLang(langBar.value);
+for (const l of LANGS) {
+  const b = document.createElement('button');
+  b.textContent = l.toUpperCase();
+  b.title = LANG_NAMES[l];
+  b.dataset.lang = l;
+  b.onclick = () => setLang(l);
+  langBar.appendChild(b);
+}
 setLang(lang);
 
 async function loadScreen() {

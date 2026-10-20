@@ -86,7 +86,7 @@ async function loadScreen(url, tries = 3) {
 
 function showScreen(i) {
   screenIdx = i;
-  screenMat.map = screenMat.emissiveMap = screenTex[i];
+  screenMat.map = screenTex[i];
   screenMat.needsUpdate = true;
 }
 
@@ -108,11 +108,10 @@ Promise.all([
     const group = name === 'screen' ? 'display' : name.split('__')[0];
     parts.push({ obj: o, group, base: o.position.z });
     if (name === 'screen') {
-      screenMat = o.material;
-      screenMat.color.set(0xffffff);
-      screenMat.emissive = new THREE.Color(0xffffff);
-      screenMat.emissiveIntensity = 0.9;
-      screenMat.roughness = 0.15;
+      // экран светится сам: без освещения и тон-маппинга — цвета как на устройстве
+      screenMat = new THREE.MeshBasicMaterial({ toneMapped: false });
+      o.material = screenMat;
+      o.receiveShadow = false;
       showScreen(0);
     }
   });

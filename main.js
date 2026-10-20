@@ -295,23 +295,22 @@ renderer.domElement.addEventListener('pointermove', e => {
 });
 
 // ─── поэтапная разборка ─────────────────────────────────────────────────────
-// Скролл ведёт t от 0 до 1, разборка идёт тремя этапами по трети шкалы:
-//   1) выкручиваются шурупы;  2) расходятся панель и задняя часть (шурупы — за ней);
-//   3) устройство делится на экран, плату и зуммер.
+// Скролл ведёт t от 0 до 1, разборка идёт двумя этапами по половине шкалы:
+//   1) крышка и чашка расходятся (защёлки — без шурупов);
+//   2) устройство делится на экран, плату и зуммер.
 // Финальные сдвиги — из explode.json (те же, что у render_hero.py).
 const smooth = x => x * x * (3 - 2 * x);
 function stageTargets(ex) {
-  const s1 = { screws: ex.screws - ex.back };                          // вышли из корпуса
-  const s2 = { ...s1, front: ex.front, back: ex.back, screws: ex.screws };
-  const s3 = { ...s2, display: ex.display, s2: ex.s2, buzzer: ex.buzzer };
-  return [{}, s1, s2, s3];
+  const s1 = { front: ex.front, back: ex.back };
+  const s2 = { ...s1, display: ex.display, s2: ex.s2, buzzer: ex.buzzer };
+  return [{}, s1, s2];
 }
 let stages = null;
 function explodeOffset(group, t) {
   stages ??= stageTargets(explode);
   let z = 0;
   for (let k = 1; k < stages.length; k++) {
-    const local = smooth(THREE.MathUtils.clamp(t * 3 - (k - 1), 0, 1));
+    const local = smooth(THREE.MathUtils.clamp(t * (stages.length - 1) - (k - 1), 0, 1));
     z += ((stages[k][group] ?? 0) - (stages[k - 1][group] ?? 0)) * local;
   }
   return z;

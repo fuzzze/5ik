@@ -1,4 +1,4 @@
-// Blin в three.js: вращение мышью/пальцем, клик по макушке — следующий экран
+// Blin в three.js: вращение мышью/пальцем, клик по макушке или дну — следующий экран
 // (как кнопка-дно в настоящем корпусе), колесо/два пальца — взрыв-схема.
 // Единицы — миллиметры, оси как в модели: X вправо, Y вверх, Z к зрителю.
 import * as THREE from 'three';
@@ -6,9 +6,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { BlinScreen, LANGS, loadFont } from './screen.js';
+import { buildProps, setResolution } from './props.js';
 
 const CENTER = new THREE.Vector3(0, -7, -8);   // середина собранного устройства
 const TOP_Y = 4;          // клик выше этой отметки (мм от центра экрана) — «макушка»
+const BOTTOM_Y = -31.5;   // клик ниже — дно-клавиша (Y_IN_BOT)
 const PRESS_DEG = 3.4;    // наклон корпуса при нажатии — как у кнопки-дна
 const PIVOT = new THREE.Vector3(0, -33.1, -14);  // ось шарниров клавиши
 
@@ -67,12 +69,12 @@ let screenTex = null;
 // #explode, #lang=de, #explode&lang=de — параметры в hash (query до артефакта не доходит)
 const hash = new URLSearchParams(location.hash.slice(1));
 const HINT = {
-  ru: 'тяните — вращать · колесо или два пальца — разобрать и собрать · клик по макушке — следующий экран, 2× — звук, 3× — поворот',
-  en: 'drag to rotate · scroll or two fingers to take apart · click the top for the next screen, 2× — sound, 3× — rotate',
-  de: 'ziehen — drehen · Mausrad oder zwei Finger — zerlegen · Klick oben — nächster Bildschirm, 2× — Ton, 3× — drehen',
-  fr: 'glisser — tourner · molette ou deux doigts — démonter · clic sur le dessus — écran suivant, 2× — son, 3× — rotation',
-  es: 'arrastra para girar · rueda o dos dedos para desmontar · clic arriba — siguiente pantalla, 2× — sonido, 3× — girar',
-  pt: 'arraste para girar · roda ou dois dedos para desmontar · clique no topo — próxima tela, 2× — som, 3× — girar',
+  ru: 'тяните — вращать · колесо или два пальца — разобрать и собрать · клик по макушке или дну — следующий экран, 2× — звук, 3× — поворот',
+  en: 'drag to rotate · scroll or two fingers to take apart · click the top or bottom for the next screen, 2× — sound, 3× — rotate',
+  de: 'ziehen — drehen · Mausrad oder zwei Finger — zerlegen · Klick oben oder unten — nächster Bildschirm, 2× — Ton, 3× — drehen',
+  fr: 'glisser — tourner · molette ou deux doigts — démonter · clic dessus ou dessous — écran suivant, 2× — son, 3× — rotation',
+  es: 'arrastra para girar · rueda o dos dedos para desmontar · clic arriba o abajo — siguiente pantalla, 2× — sonido, 3× — girar',
+  pt: 'arraste para girar · roda ou dois dedos para desmontar · clique no topo ou na base — próxima tela, 2× — som, 3× — girar',
 };
 function setLang(l) {
   if (!LANGS.includes(l)) l = 'en';
@@ -134,6 +136,7 @@ Promise.all([
   const r0 = (+hash.get('rot') || 0) & 3;
   for (let i = 0; i < r0; i++) screen.rotate();
   device.rotation.z = turnFrom = turnTo = r0 * Math.PI / 2;
+  propCur = r0;
   document.getElementById('loading').remove();
 }).catch(err => {
   document.getElementById('loading').textContent =
@@ -177,9 +180,9 @@ function hitTop(ev) {
   ray.setFromCamera(ndc, camera);
   const hit = ray.intersectObjects(parts.map(p => p.obj), false)[0];
   if (!hit) return false;
-  // «макушка» — что сейчас сверху: высота над серединой корпуса по вертикали мира,
-  // поэтому и после поворота на бок жмётся верхняя грань
-  return hit.point.y - device.getWorldPosition(tmpV).y > TOP_Y - CENTER.y;
+  // как в жизни: щёлкает, если сжать макушку или дно-клавишу — в любом положении
+  const y = device.worldToLocal(tmpV.copy(hit.point)).y + CENTER.y;   // мм модели
+  return y > TOP_Y || y < BOTTOM_Y;
 }
 
 renderer.domElement.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
@@ -261,12 +264,39 @@ function pressAngle(now) {
   return THREE.MathUtils.degToRad(PRESS_DEG) * Math.sin(k * Math.PI / 2);
 }
 
+// ─── окружение: поверхность / кабель / пауэрбанк ────────────────────────────
+// По положению (rot = 0..3) — свой реквизит в системе модели. При повороте старый
+// гаснет сразу, новый проявляется, когда корпус довернулся. В разборе — скрыт.
+const props = buildProps();
+const propsRoot = new THREE.Group();
+propsRoot.position.copy(CENTER).negate();
+props.forEach(p => { p.visible = false; propsRoot.add(p); });
+device.add(propsRoot);
+setResolution(innerWidth, innerHeight);
+const PROP_OUT = 0.25, PROP_IN = 0.45;   // с
+let propCur = 0, propInAt = -1e9;
+const propOutAt = props.map(() => -1e9);
+function showProp(r, now) {
+  propOutAt[propCur] = now;
+  propCur = r;
+  propInAt = now + TURN_DELAY + TURN_TIME;
+}
+function fadeProps(now, e) {
+  props.forEach((p, i) => {
+    const a = (i === propCur ? THREE.MathUtils.clamp((now - propInAt) / PROP_IN, 0, 1)
+                             : 1 - THREE.MathUtils.clamp((now - propOutAt[i]) / PROP_OUT, 0, 1)) * (1 - e);
+    p.visible = a > 0.01;
+    if (p.visible) p.traverse(o => { if (o.material) o.material.opacity = a; });
+  });
+}
+
 // ─── поворот устройства вслед за экраном ────────────────────────────────────
 // Экран повернулся на 90° по часовой — корпус чуть погодя плавно ложится на бок
 // против часовой, и картинка снова стоит прямо (корпус встаёт на любую из трёх граней).
 const TURN_DELAY = 0.35, TURN_TIME = 0.9;   // с
 let turnFrom = 0, turnTo = 0, turnT0 = -1;
 function turnDevice(now) {
+  showProp(screen.rot, now);
   turnFrom = device.rotation.z;
   turnTo += Math.PI / 2;                     // копится: после 270° — дальше, а не назад
   turnT0 = now + TURN_DELAY;
@@ -286,6 +316,7 @@ function frame() {
   // в разобранном виде середина смещается назад — держим её в центре кадра
   device.position.z = 19 * e;
   device.rotation.z = turnAngle(now);
+  fadeProps(now, e);
   // нажатие: корпус наклоняется вперёд вокруг шарниров (только в собранном виде)
   press.rotation.x = pressAngle(now) * (1 - e);
   // отъезжаем камерой, чтобы разлёт помещался в кадр
@@ -303,6 +334,7 @@ function frame() {
 frame();
 
 addEventListener('resize', () => {
+  setResolution(innerWidth, innerHeight);
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);

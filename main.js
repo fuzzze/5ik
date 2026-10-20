@@ -130,6 +130,10 @@ Promise.all([
       o.receiveShadow = false;
     }
   });
+  // #rot=1..3 — открыть с повёрнутым экраном и устройством
+  const r0 = (+hash.get('rot') || 0) & 3;
+  for (let i = 0; i < r0; i++) screen.rotate();
+  device.rotation.z = turnFrom = turnTo = r0 * Math.PI / 2;
   document.getElementById('loading').remove();
 }).catch(err => {
   document.getElementById('loading').textContent =
@@ -163,6 +167,7 @@ renderer.domElement.addEventListener('touchend', () => { pinchY = null; });
 
 // ─── клик по макушке ────────────────────────────────────────────────────────
 const ray = new THREE.Raycaster();
+const tmpV = new THREE.Vector3();
 const ndc = new THREE.Vector2();
 let down = null;
 let pressT = -1;           // время начала анимации нажатия, с
@@ -172,8 +177,9 @@ function hitTop(ev) {
   ray.setFromCamera(ndc, camera);
   const hit = ray.intersectObjects(parts.map(p => p.obj), false)[0];
   if (!hit) return false;
-  const local = device.worldToLocal(hit.point.clone()).add(CENTER);   // в мм модели
-  return local.y > TOP_Y;
+  // «макушка» — что сейчас сверху: высота над серединой корпуса по вертикали мира,
+  // поэтому и после поворота на бок жмётся верхняя грань
+  return hit.point.y - device.getWorldPosition(tmpV).y > TOP_Y - CENTER.y;
 }
 
 renderer.domElement.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
@@ -198,7 +204,7 @@ function bootClick() {
     const now = performance.now();
     if (clicks === 1) screen.goto(screen.idx + 1, now);
     else if (clicks === 2) buzz(screen.toggleMute() ? 2700 : 3200, 80);
-    else { screen.rotate(); buzz(3200, 60); }
+    else { screen.rotate(); buzz(3200, 60); turnDevice(now / 1000); }
     clicks = 0;
   }, CLICK_GAP);
 }
@@ -255,6 +261,23 @@ function pressAngle(now) {
   return THREE.MathUtils.degToRad(PRESS_DEG) * Math.sin(k * Math.PI / 2);
 }
 
+// ─── поворот устройства вслед за экраном ────────────────────────────────────
+// Экран повернулся на 90° по часовой — корпус чуть погодя плавно ложится на бок
+// против часовой, и картинка снова стоит прямо (корпус встаёт на любую из трёх граней).
+const TURN_DELAY = 0.35, TURN_TIME = 0.9;   // с
+let turnFrom = 0, turnTo = 0, turnT0 = -1;
+function turnDevice(now) {
+  turnFrom = device.rotation.z;
+  turnTo += Math.PI / 2;                     // копится: после 270° — дальше, а не назад
+  turnT0 = now + TURN_DELAY;
+}
+function turnAngle(now) {
+  if (turnT0 < 0 || now < turnT0) return device.rotation.z;
+  const k = Math.min(1, (now - turnT0) / TURN_TIME);
+  const ease = k < 0.5 ? 4 * k * k * k : 1 - (-2 * k + 2) ** 3 / 2;   // easeInOutCubic
+  return turnFrom + (turnTo - turnFrom) * ease;
+}
+
 function frame() {
   const now = performance.now() / 1000;
   t += (tTarget - t) * 0.12;
@@ -262,6 +285,7 @@ function frame() {
   for (const p of parts) p.obj.position.z = p.base + explodeOffset(p.group, t);
   // в разобранном виде середина смещается назад — держим её в центре кадра
   device.position.z = 19 * e;
+  device.rotation.z = turnAngle(now);
   // нажатие: корпус наклоняется вперёд вокруг шарниров (только в собранном виде)
   press.rotation.x = pressAngle(now) * (1 - e);
   // отъезжаем камерой, чтобы разлёт помещался в кадр

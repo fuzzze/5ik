@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BLIN — документация</title>
+<meta name="description" content="Как собрать, прошить и настроить термометр Blin: сборка, режим AP, MQTT, экраны, оповещения, ведущий и ведомые.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── из админки (src/web/html.h) как есть — те же, что у главной страницы сайта;
+   overflow-x:clip вместо hidden — иначе не работает sticky-оглавление ── */
+:root{--bg:#e8e8e8;--ink:#000;--white:#fff;--soft:#f2f2f7;--mid:#dcdcdc;--mute:#8e8e93;--ink-soft:#555;--c-normal:#00c853;--font:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --c-cold:#00DCF4;--c-norm:#7BFF00;--c-hot:#FF2121;--c-warn:#FFBD00}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:var(--font);font-weight:500;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100%}
+html{min-height:100vh;overflow-x:clip;scroll-behavior:smooth;scroll-padding-top:16px}
+body{min-height:100vh;overflow-x:clip;box-shadow:inset 0 0 40px rgba(0,0,0,0.2)}
+html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+.page-hdr{position:relative;z-index:1;display:grid;grid-template-columns:1fr auto 1fr;align-items:flex-end;padding:24px max(100px,calc((100% - 1720px)/2)) 25px}
+.hdr-icons{display:flex;align-items:center;gap:12px;justify-self:start}
+.hdr-time{text-align:center;font-size:32px;font-weight:600;line-height:1;white-space:nowrap}
+.hdr-blin{justify-self:end;height:28px;display:flex;align-items:flex-end}
+.hdr-blin svg{height:28px;width:99px;display:block;fill:var(--ink)}
+.card{position:relative;z-index:1;margin:0 max(100px,calc((100% - 1720px)/2));border:1px solid var(--ink);border-radius:4px;background:var(--bg)}
+.sec-sub{font-size:24px;font-weight:500;display:flex;align-items:center;gap:16px;margin:28px 0 18px}
+.sec-sub::after{content:'';flex:1;height:1px;background:var(--ink)}
+.btn-outline{height:40px;padding:0 16px;background:var(--bg);color:#000;border:1px solid #000;font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;border-radius:4px}
+.btn-outline:hover{background:#dcdcdc}
+.ftr{position:relative;z-index:1;display:flex;align-items:center;gap:24px;padding:25px max(100px,calc((100% - 1720px)/2)) 40px;font-size:14px}
+@media (max-width:1280px){
+  .page-hdr{padding:14px 16px 14px;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+  .hdr-blin{height:22px}
+  .hdr-blin svg{height:22px;width:auto}
+  .card{margin:0 12px}
+  .ftr{padding:20px 16px 24px}
+}
+
+/* ── документация ── */
+a{color:inherit}
+.back{display:inline-flex;align-items:center;text-decoration:none;font-size:13px;height:32px;padding:0 12px;white-space:nowrap}
+.hdr-time{font-size:20px;font-weight:600}
+.doc{display:grid;grid-template-columns:260px minmax(0,1fr);}
+.toc{border-right:1px solid var(--ink);padding:28px 20px 40px 24px}
+.toc-in{position:sticky;top:20px;max-height:calc(100vh - 40px);overflow-y:auto}
+.toc b{display:block;font-size:12px;color:var(--mute);font-weight:500;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.toc ol{list-style:none;counter-reset:t}
+.toc li{counter-increment:t}
+.toc a{display:flex;gap:8px;text-decoration:none;font-size:13px;line-height:1.35;padding:5px 8px;margin:0 -8px;border-radius:4px;color:var(--ink-soft)}
+.toc a::before{content:counter(t,decimal-leading-zero);color:var(--mute);flex:none}
+.toc a:hover{background:var(--mid);color:var(--ink)}
+.toc a.act{background:#fff;color:var(--ink);font-weight:600}
+.body{padding:8px 56px 56px;max-width:1080px;font-size:14px;line-height:1.65;color:#1c1c1e}
+.body section{padding-top:12px}
+.body section+section{margin-top:28px}
+.body h2{font-size:28px;font-weight:600;display:flex;align-items:center;gap:16px;margin:28px 0 18px;line-height:1.2}
+.body h2::after{content:'';flex:1;height:1px;background:var(--ink)}
+.body h2 .n{color:var(--mute);font-weight:500}
+.body h3{font-size:18px;font-weight:600;margin:30px 0 10px;line-height:1.3}
+.body h4{font-size:14px;font-weight:600;margin:20px 0 6px}
+.body p{margin:10px 0}
+.body ul,.body ol{margin:10px 0 10px 22px}
+.body li{margin:4px 0}
+.body li::marker{color:var(--mute)}
+.lead{font-size:16px;line-height:1.6;color:var(--ink)}
+code,kbd{font-family:var(--font);font-size:.92em;background:#fff;border:1px solid var(--mid);border-radius:3px;padding:0 4px;white-space:nowrap}
+kbd{border-color:#000;border-bottom-width:2px;font-weight:600}
+pre{font-family:var(--font);font-size:13px;line-height:1.55;background:#fff;border:1px solid #000;border-radius:4px;padding:14px 16px;overflow-x:auto;margin:12px 0}
+pre code{background:none;border:0;padding:0;white-space:pre}
+pre .c{color:var(--mute)}
+.note{border-left:3px solid #000;background:rgba(255,255,255,.55);padding:10px 14px;margin:14px 0;border-radius:0 4px 4px 0}
+.note.warn{border-left-color:var(--c-warn)}
+.note.ok{border-left-color:var(--c-normal)}
+.note b:first-child{margin-right:4px}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+th{font-weight:500;color:var(--mute);text-align:left;font-size:12px;padding:6px 10px 6px 0;border-bottom:1px solid #000}
+td{padding:7px 10px 7px 0;border-bottom:1px solid var(--mid);vertical-align:top}
+td:first-child{white-space:nowrap}
+figure{margin:18px 0}
+figure img,figure svg{display:block;max-width:100%;height:auto}
+figure.frame img{border:1px solid #000;border-radius:4px;background:#fff}
+figcaption{font-size:12px;color:var(--ink-soft);margin-top:8px;line-height:1.5}
+.screen{border-radius:50%;box-shadow:0 0 0 6px #111,0 0 0 7px #000,0 6px 18px rgba(0,0,0,.25)}
+.screens{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 22px;margin:20px 0}
+.screens figure{margin:0;text-align:center}
+.screens img{width:100%;max-width:200px;margin:0 auto}
+.screens figcaption{text-align:left}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+.row2.wide-l{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
+.anat{display:grid;grid-template-columns:300px minmax(0,1fr);gap:32px;align-items:start;margin:18px 0}
+.anat-pic{position:relative;width:300px}
+.anat-pic img{width:300px;height:300px}
+.pin{position:absolute;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:#fff;border:1px solid #000;font-size:11px;font-weight:700;display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.legend{list-style:none;margin:0!important;counter-reset:l}
+.legend li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:6px;margin:0 0 8px}
+.legend li::before{counter-increment:l;content:counter(l);width:20px;height:20px;border-radius:50%;border:1px solid #000;background:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;margin-top:2px}
+.steps{list-style:none;margin:14px 0!important;counter-reset:s}
+.steps>li{position:relative;padding:0 0 14px 44px;margin:0}
+.steps>li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:#000;color:#fff;font-size:13px;font-weight:600;display:grid;place-items:center}
+.steps>li:not(:last-child)::after{content:'';position:absolute;left:13.5px;top:32px;bottom:2px;width:1px;background:#000}
+.chip{display:inline-block;width:11px;height:11px;border-radius:2px;border:1px solid #000;vertical-align:-1px;margin-right:2px}
+.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 18px;margin:12px 0}
+.kv dt{font-weight:600}
+.kv dd{margin:0;color:#333}
+.scen{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:16px 0}
+.scen>div{border:1px solid #000;border-radius:4px;padding:14px 16px;background:rgba(255,255,255,.4)}
+.scen h4{margin:0 0 6px}
+.scen p{margin:6px 0;font-size:13px}
+.faq details{border-bottom:1px solid var(--mid);padding:10px 0}
+.faq summary{cursor:pointer;font-weight:600;list-style:none;display:flex;gap:10px}
+.faq summary::before{content:'+';width:14px;flex:none}
+.faq details[open] summary::before{content:'–'}
+.faq details>div{padding:6px 0 4px 24px}
+.top{display:inline-block;margin-top:8px;font-size:12px;color:var(--mute);text-decoration:none}
+.top:hover{color:var(--ink)}
+@media (max-width:1100px){
+  .doc{grid-template-columns:minmax(0,1fr)}
+  .toc{border-right:0;border-bottom:1px solid var(--ink);padding:18px 16px}
+  .toc-in{position:static;max-height:none}
+  .toc ol{columns:2;column-gap:18px}
+  .body{padding:4px 18px 40px}
+}
+@media (max-width:760px){
+  .toc ol{columns:1}
+  .row2,.row2.wide-l,.anat,.scen{grid-template-columns:1fr}
+  .anat-pic{margin:0 auto}
+  .screens{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .body h2{font-size:22px}
+  td:first-child{white-space:normal}
+  td code{white-space:normal;word-break:break-word}
+  .hdr-time{font-size:15px}
+  pre{font-size:12px}
+}
+@media print{html::before,.toc,.ftr,.back{display:none}.doc{display:block}.card{border:0;margin:0}body{box-shadow:none}}
+</style>
+</head>
+<body>
+<header class="page-hdr">
+<div class="hdr-icons"><a class="btn-outline back" href="../">← На главную</a></div>
+<div class="hdr-time">Документация</div>
+<div class="hdr-blin"><svg viewBox="0 0 156 45" fill="currentColor" aria-label="BLIN"><g transform="translate(-1663,-60)"><g transform="translate(1496.168,42.8)"><path d="M202.672,38.576 C205.317333,39.5573333 207.365333,40.9866667 208.816,42.864 C210.266667,44.7413333 210.992,47.0026667 210.992,49.648 C210.992,53.5733333 209.370667,56.6133333 206.128,58.768 C202.885333,60.9226667 198.192,62 192.048,62 L166.832,62 L166.832,17.2 L190.768,17.2 C196.741333,17.2 201.253333,18.2666667 204.304,20.4 C207.354667,22.5333333 208.88,25.3706667 208.88,28.912 C208.88,31.0026667 208.357333,32.88 207.312,34.544 C206.266667,36.208 204.72,37.552 202.672,38.576 Z M181.68,27.76 L181.68,34.416 L188.72,34.416 C192.005333,34.416 193.648,33.3066667 193.648,31.088 C193.648,28.8693333 192.005333,27.76 188.72,27.76 L181.68,27.76 Z M190.768,51.44 C194.096,51.44 195.76,50.2666667 195.76,47.92 C195.76,45.5733333 194.096,44.4 190.768,44.4 L181.68,44.4 L181.68,51.44 L190.768,51.44 Z"/><polygon points="216.304 17.2 231.408 17.2 231.408 50.288 251.632 50.288 251.632 62 216.304 62"/><polygon points="255.792 17.2 270.896 17.2 270.896 62 255.792 62"/><polygon points="322.352 17.2 322.352 62 309.936 62 292.912 41.648 292.912 62 278.192 62 278.192 17.2 290.608 17.2 307.632 37.552 307.632 17.2"/></g></g></svg></div>
+</header>
+
+<div class="card">
+<div class="doc">
+<nav class="toc" aria-label="Содержание"><div class="toc-in">
+<b>Содержание</b>
+<ol>
+<li><a href="#about">Что такое Blin</a></li>
+<li><a href="#parts">Что понадобится</a></li>
+<li><a href="#build">Сборка</a></li>
+<li><a href="#flash">Прошивка</a></li>
+<li><a href="#ap">Первое включение: режим AP</a></li>
+<li><a href="#screen">Экран устройства</a></li>
+<li><a href="#button">Кнопка</a></li>
+<li><a href="#mqtt">MQTT: откуда берутся данные</a></li>
+<li><a href="#admin">Веб-админка</a></li>
+<li><a href="#pages">Экраны (страницы)</a></li>
+<li><a href="#sliders">Ползунки температуры</a></li>
+<li><a href="#alerts">Оповещения</a></li>
+<li><a href="#extra">Экстра-иконки и моточасы</a></li>
+<li><a href="#settings">Настройки устройства</a></li>
+<li><a href="#auth">Пароль и гостевой режим</a></li>
+<li><a href="#lead">Ведущий и ведомые</a></li>
+<li><a href="#service">Обновления, бэкап, сброс</a></li>
+<li><a href="#cases">Сценарии использования</a></li>
+<li><a href="#faq">Если что-то не так</a></li>
+<li><a href="#ref">Справочник</a></li>
+</ol>
+</div></nav>
+
+<main class="body">
+
+<!-- ═══════════════════════════════ 1 ═══════════════════════════════ -->
+<section id="about">
+<h2><span class="n">01</span> Что такое Blin</h2>
+<div class="row2 wide-l">
+<div>
+<p class="lead">Blin — маленький настольный термометр с круглым экраном. Он не измеряет температуру сам: он <b>показывает</b> то, что присылают ваши датчики через MQTT, — в доме, на улице, в теплице, в холодильнике, в серверной.</p>
+<p>Одно устройство держит до <b>шести экранов</b> — по экрану на каждый датчик. На каждом: текущая температура, цветная дуга, минимум и максимум, график за сутки по часам, состояние обогревателя или кулера. Когда температура уходит за пороги, Blin пищит и показывает снежинки или пламя.</p>
+<p>Всё настраивается из браузера: у каждого Blin есть своя веб-админка. Несколько Blin в одном доме умеют синхронизировать настройки — меняете на одном, остальные подхватывают.</p>
+<p>Прошивка обновляется сама по Wi-Fi. Корпус печатается на 3D-принтере, без единого винта.</p>
+</div>
+<figure style="margin-top:6px">
+<img class="screen" src="img/live.png" width="240" height="240" alt="Экран Blin: 9.5 градуса, Кактусник" style="width:240px;margin:6px auto 0">
+<figcaption style="text-align:center">Снимок с живого устройства: экран «Кактусник», 9.5 °C — ниже нормы, поэтому дуга голубая. Обогреватель включён.</figcaption>
+</figure>
+</div>
+</section>
+
+<!-- ═══════════════════════════════ 2 ═══════════════════════════════ -->
+<section id="parts">
+<h2><span class="n">02</span> Что понадобится</h2>
+<table>
+<tr><th>Что</th><th>Подробности</th></tr>
+<tr><td>Плата Wemos Lolin S2 Mini</td><td>ESP32-S2, 4 МБ флеш, 2 МБ PSRAM, разъём USB-C. Именно S2 Mini: прошивка собрана под этот чип и эту распиновку.</td></tr>
+<tr><td>Круглый дисплей 1,28″ GC9A01</td><td>240×240, SPI, на плате-«хвостике» с семью пинами <code>VCC GND SCL SDA DC CS RST</code>. Иногда маркируется GS9A01.</td></tr>
+<tr><td>Гребёнка 1×7, шаг 2,54</td><td>Штыревой разъём: соединяет дисплей и плату напрямую, без проводов.</td></tr>
+<tr><td>Пассивный зуммер Ø12 мм</td><td>Пьезо/электромагнитный без генератора, ножки с шагом 7,62 мм. Громче всего звучит на 2800 Гц — под это подобраны сигналы.</td></tr>
+<tr><td>Корпус</td><td>Две детали, печать из <b>PETG</b>. STL — на главной странице сайта, кнопка «Модели корпуса».</td></tr>
+<tr><td>Кабель USB-C</td><td>Для питания и первой прошивки. Подойдёт любой зарядник на 5 В.</td></tr>
+<tr><td>Паяльник</td><td>Всего 9 точек пайки.</td></tr>
+<tr><td>MQTT-брокер</td><td>Сервер, через который датчики передают данные. Если у вас Home Assistant — он, скорее всего, уже есть. Подробности — в разделе <a href="#mqtt">MQTT</a>.</td></tr>
+</table>
+<p>Компьютер с Chrome или Edge нужен один раз — для первой прошивки прямо с сайта. Дальше всё делается с телефона.</p>
+</section>
+
+<!-- ═══════════════════════════════ 3 ═══════════════════════════════ -->
+<section id="build">
+<h2><span class="n">03</span> Сборка</h2>
+<figure>
+<img src="img/exploded_front.jpg" width="1400" alt="Взрыв-схема: передняя панель, дисплей, плата S2 Mini, зуммер, задняя часть">
+<figcaption>Из чего состоит Blin, слева направо: передняя панель, дисплей, плата S2 Mini, зуммер, задняя часть с кнопкой-дном.</figcaption>
+</figure>
+
+<h3>Электрика: дисплей садится на плату</h3>
+<p>Проводов нет. Плата S2 Mini лежит за дисплеем, параллельно ему. Семь пинов дисплея через гребёнку впаиваются в <b>левый внешний ряд</b> S2 Mini — если держать плату USB-разъёмом вверх, это ряд от <code>VBUS</code> вниз. Пины совпадают один к одному, ничего перекрещивать не нужно:</p>
+
+<figure>
+<svg viewBox="0 0 760 300" width="760" role="img" aria-label="Схема соединения дисплея и S2 Mini">
+<style>.t{font:600 13px 'JetBrains Mono',monospace}.s{font:500 11px 'JetBrains Mono',monospace;fill:#555}</style>
+<rect x="20" y="20" width="720" height="56" rx="4" fill="#2864c8"/>
+<text x="34" y="42" class="t" fill="#fff">Дисплей GC9A01 — хвостик с пинами</text>
+<rect x="20" y="224" width="720" height="56" rx="4" fill="#5b2a86"/>
+<text x="34" y="270" class="t" fill="#fff">Lolin S2 Mini — левый внешний ряд, от USB</text>
+<g id="w"></g>
+</svg>
+<figcaption>Пин дисплея → отверстие S2 Mini. Это ровно те GPIO, на которые рассчитана прошивка: CLK 16, MOSI 18, DC 33, CS 35, RST 37. Восьмое отверстие ряда (39) остаётся пустым.</figcaption>
+</figure>
+
+<table>
+<tr><th>Дисплей</th><th>S2 Mini</th><th>Назначение</th></tr>
+<tr><td><code>VCC</code></td><td><code>VBUS</code></td><td>питание 5 В от USB (первое отверстие от разъёма)</td></tr>
+<tr><td><code>GND</code></td><td><code>GND</code></td><td>земля</td></tr>
+<tr><td><code>SCL</code></td><td><code>16</code></td><td>тактовый сигнал SPI</td></tr>
+<tr><td><code>SDA</code></td><td><code>18</code></td><td>данные SPI (MOSI)</td></tr>
+<tr><td><code>DC</code></td><td><code>33</code></td><td>команда / данные</td></tr>
+<tr><td><code>CS</code></td><td><code>35</code></td><td>выбор чипа</td></tr>
+<tr><td><code>RST</code></td><td><code>37</code></td><td>сброс дисплея</td></tr>
+</table>
+
+<h4>Зуммер</h4>
+<p>Зуммер стоит на стороне компонентов S2 Mini, поверх чипа, на ножках высотой около 2 мм. Его ножки идут во <b>внутренний левый ряд</b>: в отверстия <code>GND</code> (второе от USB) и <code>34</code> (пятое) — между ними ровно три шага, как у 12-миллиметровых зуммеров. Полярность для пассивного зуммера не важна. Хвосты ножек и гребёнки откусите заподлицо: снизу у платы мало места.</p>
+
+<h4>Порядок пайки</h4>
+<ol class="steps">
+<li>Вставьте гребёнку длинными концами в дисплей со стороны, <b>противоположной экрану</b>, и пропаяйте 7 пинов на плате дисплея.</li>
+<li>Наденьте S2 Mini на гребёнку: сторона компонентов (чип, USB) смотрит <b>от дисплея</b>, <code>VBUS</code> — под <code>VCC</code>. Плата прижата к пластиковой планке гребёнки.</li>
+<li>Пропаяйте гребёнку на S2 Mini, откусите хвосты.</li>
+<li>Вставьте зуммер в <code>GND</code> и <code>34</code> внутреннего ряда со стороны компонентов, пропаяйте с обратной стороны, откусите.</li>
+<li>Подключите USB — подсветка дисплея загорится сразу (она подключена к питанию напрямую). Изображения пока нет: плату нужно прошить.</li>
+</ol>
+
+<div class="note warn"><b>Важно.</b> У этого дисплея подсветку нельзя выключить командами: она всегда горит, пока есть питание. Это нормально — прошивка гасит экран рисованием, а не подсветкой.</div>
+
+<h3>Корпус</h3>
+<div class="row2">
+<div>
+<p>Корпус — две детали на защёлках, без винтов и клея.</p>
+<ul>
+<li><b>Передняя панель</b> держит дисплей на штифтах: они входят в монтажные отверстия платы дисплея.</li>
+<li><b>Задняя часть</b> надевается сверху и защёлкивается четырьмя пальцами. Её дно — большая <b>клавиша на гибких шарнирах</b>. Нажмите на макушку устройства, корпус чуть наклонится, и толкатель нажмёт кнопку <kbd>0</kbd> (Boot) на плате. Так весь Blin становится одной большой кнопкой.</li>
+<li>Для USB-C внутри есть рукав до самого гнезда: снаружи видно только гнездо. Для зуммера сзади — решётка.</li>
+</ul>
+<h4>Печать</h4>
+<ul>
+<li>Материал — <b>PETG</b> для обеих деталей: шарниры кнопки и пальцы защёлок должны гнуться, а PLA от этого трескается.</li>
+<li>STL уже повёрнуты как надо для печати. Переднюю панель печатайте стыком на стол, лицом вверх: поддержки нужны только внутри. Заднюю часть — задней стенкой на стол, с поддержками под полкой.</li>
+</ul>
+</div>
+<figure>
+<img src="img/exploded_back.jpg" width="1400" alt="Взрыв-схема сзади">
+<figcaption>Вид сзади: штифты и пазы на передней панели, зуммер, проём USB и решётка зуммера на задней части.</figcaption>
+</figure>
+</div>
+<h4>Сборка в корпус</h4>
+<ol class="steps">
+<li>Положите переднюю панель лицом вниз и наденьте собранный «бутерброд» дисплей + плата на штифты: экран в окно, хвостик дисплея к широкой части панели (вниз).</li>
+<li>Наденьте заднюю часть сверху, ровно по оси, и прижмите до щелчка всех защёлок.</li>
+<li>Чтобы открыть, подденьте отвёрткой в пазах снизу, по углам стыка.</li>
+<li>В корпусе устройство стоит <b>хвостиком дисплея вниз</b>, поэтому картинку нужно повернуть на 180°. Проще всего сделать это сразу при первой настройке, в поле «Поворот экрана» (см. <a href="#ap">режим AP</a>). Можно и потом: трижды нажать кнопку, и ещё раз трижды. Каждое тройное нажатие — поворот на 90°.</li>
+</ol>
+<div class="note"><b>Подсказка.</b> На главной странице сайта корпус можно покрутить в 3D и разобрать по деталям — так понятнее, что куда входит.</div>
+</section>
+
+<!-- ═══════════════════════════════ 4 ═══════════════════════════════ -->
+<section id="flash">
+<h2><span class="n">04</span> Прошивка</h2>
+<p>Новую плату прошивают по USB один раз, прямо с сайта. Дальше прошивка обновляется по Wi-Fi.</p>
+
+<h3>Первая прошивка — из браузера</h3>
+<ol class="steps">
+<li>Откройте <a href="../">главную страницу сайта</a> в <b>Chrome или Edge на компьютере</b>. Safari, Firefox и мобильные браузеры не умеют работать с USB-портом.</li>
+<li>Подключите плату кабелем и переведите её в режим загрузки: <b>зажмите кнопку <kbd>0</kbd>, нажмите и отпустите <kbd>RST</kbd>, затем отпустите <kbd>0</kbd></b>. Кнопки — на краю платы рядом с USB. Если плата уже в корпусе, сначала откройте его.</li>
+<li>Нажмите «Скачать прошивку» → «Прошить новое устройство по USB».</li>
+<li>Выберите версию (сверху — последняя) и нажмите «Подключить и прошить». В окне браузера выберите порт платы (ESP32-S2).</li>
+<li>Дождитесь «Готово». Если экран не ожил сам — нажмите <kbd>RST</kbd>.</li>
+</ol>
+<p>Прошивальщик записывает полный набор для чистой платы: загрузчик, таблицу разделов, служебный раздел OTA и саму прошивку. Свою прошивку туда не подсунуть — на выбор только официальные версии.</p>
+<div class="note"><b>«Стереть плату целиком».</b> Флажок включён по умолчанию — для новой платы так и нужно. Если перепрошиваете уже настроенный Blin и хотите сохранить Wi-Fi, экраны и историю, снимите его.</div>
+
+<h3>Обновления по Wi-Fi</h3>
+<p>Настроенный Blin сам проверяет обновления <b>раз в 6 часов</b>. Если в админке включено «Автоматически устанавливать обновления», он ставит новую версию и перезагружается. Если выключено — на странице админки появится плашка «Доступно обновление» с кнопкой «Установить».</p>
+<div class="row2">
+<div>
+<p>Вручную — в админке, внизу кнопка «Обновление прошивки»:</p>
+<ul>
+<li><b>«Проверить обновления»</b> → «Скачать и установить» — с сайта;</li>
+<li><b>«Загрузить файл прошивки .bin»</b> — файл, скачанный с сайта кнопкой «Скачать прошивку».</li>
+</ul>
+<p>Обновление сохраняет все настройки и историю.</p>
+</div>
+<figure class="frame"><img src="img/modal_fw.png" width="460" alt="Окно обновления прошивки" style="max-width:340px"><figcaption>Окно «Обновление прошивки» в админке.</figcaption></figure>
+</div>
+</section>
+
+<!-- ═══════════════════════════════ 5 ═══════════════════════════════ -->
+<section id="ap">
+<h2><span class="n">05</span> Первое включение: режим AP</h2>
+<p>Пока Blin не знает вашу сеть Wi-Fi, он сам становится точкой доступа (AP — access point) с открытой сетью <code>blin_XXXXXX</code>. Шесть символов — хвост MAC-адреса платы, у каждого устройства свои. На экране — QR-код этой сети.</p>
+<div class="row2">
+<div>
+<ol class="steps">
+<li>Наведите камеру телефона на QR-код на экране — телефон предложит подключиться к <code>blin_XXXXXX</code>. Или выберите эту сеть в списке Wi-Fi вручную; пароля у неё нет.</li>
+<li>Страница настройки откроется сама — как в гостиничном Wi-Fi. Если не открылась, наберите в браузере <code>192.168.4.1</code>.</li>
+<li>Заполните форму (о полях — ниже) и нажмите «Сохранить и перезагрузить».</li>
+<li>Blin перезагрузится и подключится к вашей сети, а <code>blin_XXXXXX</code> пропадёт. Телефон вернётся в обычный Wi-Fi.</li>
+<li>Один раз, при первом запуске, вместо названия экрана Blin покажет свой <b>IP-адрес</b>. Наберите его в браузере — откроется <a href="#admin">админка</a>.</li>
+</ol>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start">
+<figure style="margin:0"><img class="screen" src="img/st_ap.png" width="240" height="240" alt="Экран AP-режима с QR-кодом"><figcaption>Экран в режиме AP: QR-код открытой сети устройства.</figcaption></figure>
+<figure class="frame" style="margin:0"><img src="img/ap_portal.jpg" width="520" alt="Портал настройки"><figcaption>Портал настройки на телефоне.</figcaption></figure>
+</div>
+</div>
+
+<h3>Поля портала</h3>
+<dl class="kv">
+<dt>Язык интерфейса</dt><dd>Язык админки и надписей на экране: русский, английский, немецкий, французский, испанский, португальский. Потом его можно сменить в настройках.</dd>
+<dt>Имя Wi-Fi сети, пароль</dt><dd>Ваша домашняя сеть. ESP32-S2 работает только в диапазоне <b>2,4 ГГц</b>, сеть 5 ГГц он не увидит.</dd>
+<dt>MQTT: хост, порт</dt><dd>Адрес брокера, например <code>192.168.1.10</code> и <code>1883</code>. Можно оставить пустым и заполнить позже в админке: Blin заработает и без MQTT, просто без данных.</dd>
+<dt>Логин и пароль MQTT</dt><dd>Если брокер их требует.</dd>
+<dt>Поворот экрана</dt><dd>Для устройства в печатном корпусе выберите <b>180°</b>.</dd>
+<dt>Синхронизироваться с ведущим</dt><dd>Если в доме уже есть настроенный ведущий Blin, отметьте — новое устройство сразу после подключения возьмёт его экраны, цвета и пороги. См. <a href="#lead">Ведущий и ведомые</a>.</dd>
+</dl>
+
+<div class="note warn"><b>Если Wi-Fi не подключился.</b> При включении Blin ждёт сеть около 12 секунд. Не дождался (неверный пароль, роутер ещё загружается, сеть 5 ГГц) — снова поднимает <code>blin_XXXXXX</code> с уже заполненной формой. Поправьте и сохраните. Если просто роутер был выключен — перезагрузите Blin (переподключите кабель), когда сеть появится.</div>
+
+<h3>Как Blin стартует</h3>
+<p>При каждом включении на экране сначала жёлтая полоса «Подключаю Wi-Fi», затем на ней адрес <code>http://…</code>, затем рабочий экран. Рабочий экран появляется сразу после Wi-Fi, <b>не дожидаясь MQTT</b>: пока данных нет, вместо цифр «моргает» рожица <code>O_o</code>.</p>
+</section>
+
+<!-- ═══════════════════════════════ 6 ═══════════════════════════════ -->
+<section id="screen">
+<h2><span class="n">06</span> Экран устройства</h2>
+<div class="anat">
+<div class="anat-pic">
+<img class="screen" src="img/live.png" width="300" height="300" alt="Экран с пронумерованными элементами">
+<span class="pin" style="left:6%;top:30%">1</span>
+<span class="pin" style="left:44%;top:9%">2</span>
+<span class="pin" style="left:76%;top:33%">3</span>
+<span class="pin" style="left:3%;top:63%">4</span>
+<span class="pin" style="left:73%;top:62%">5</span>
+<span class="pin" style="left:22%;top:77.5%">6</span>
+<span class="pin" style="left:65%;top:84%">7</span>
+<span class="pin" style="left:30%;top:95%">8</span>
+<span class="pin" style="left:94%;top:14%">9</span>
+</div>
+<ol class="legend">
+<li><span><b>Дуга</b> — шкала от минимума до максимума, заданных для экрана. Её цвет — <a href="#sliders">зона</a>: <span class="chip" style="background:var(--c-cold)"></span>холодно, <span class="chip" style="background:var(--c-norm)"></span>норма, <span class="chip" style="background:var(--c-hot)"></span>жарко, <span class="chip" style="background:var(--c-warn)"></span>нет свежих данных.</span></li>
+<li><span><b>Иконки</b>: экстра-иконка (обогреватель или кулер), Wi-Fi, колокольчик. Колокольчик белый, если звуковые оповещения включены хотя бы на одном экране и звук не заглушён; серый — если выключены.</span></li>
+<li><span><b>Температура</b> сейчас, последнее значение из MQTT.</span></li>
+<li><span><b>Минимум и максимум</b> за последние 24 часа. Их не нужно присылать: Blin считает их сам по графику и текущему значению.</span></li>
+<li><span><b>График за сутки</b>: 24 столбика, по одному на час, каждый — средняя температура за час. Самый правый — текущий час. Столбики раскрашены по зонам. Отрицательные растут вниз от нулевой линии. Серые — часы, когда данных не было.</span></li>
+<li><span><b>Название экрана</b>.</span></li>
+<li><span><b>Точки</b> — сколько всего экранов и какой открыт (белая). Жёлтая точка — у этого экрана перестал отвечать датчик.</span></li>
+<li><span><b>Нижняя панель</b> всегда показывает <b>главный экран</b>. Открыт сам главный — в ней часы <code>ЧЧ:ММ</code> с мигающим двоеточием, любой другой — температура главного. Цвет панели — зона главного экрана. Так главное значение видно всегда, что бы ни было открыто.</span></li>
+<li><span><b>Белые кружки на дуге</b> — пороги звуковых оповещений, если они включены.</span></li>
+</ol>
+</div>
+
+<h3>Состояния</h3>
+<div class="screens">
+<figure><img class="screen" src="img/st_norm.png" width="240" height="240" alt=""><figcaption><b>Норма.</b> Температура между границами зон — зелёный.</figcaption></figure>
+<figure><img class="screen" src="img/st_cold.png" width="240" height="240" alt=""><figcaption><b>Холодно.</b> Ниже нижней границы — голубой.</figcaption></figure>
+<figure><img class="screen" src="img/st_hot.png" width="240" height="240" alt=""><figcaption><b>Жарко.</b> Выше верхней границы — красный. Последние столбики тоже покраснели.</figcaption></figure>
+<figure><img class="screen" src="img/st_stale.png" width="240" height="240" alt=""><figcaption><b>Датчик молчит.</b> MQTT работает, но по этому экрану <b>3 минуты</b> нет данных: дуга и название жёлтые, точка экрана тоже. Придут данные — цвет вернётся.</figcaption></figure>
+<figure><img class="screen" src="img/st_nodata.png" width="240" height="240" alt=""><figcaption><b>Данных ещё не было</b> — после включения или для нового экрана. Рожица моргает, пока не придёт первое значение.</figcaption></figure>
+<figure><img class="screen" src="img/st_neg.png" width="240" height="240" alt=""><figcaption><b>Мороз.</b> Минус на улице: дуга от −20 до +30, столбики ниже нуля растут вниз.</figcaption></figure>
+</div>
+
+<h3>Живые мелочи</h3>
+<ul>
+<li><b>Хулиганство.</b> Раз в 20–40 минут цифры на секунду превращаются в <code>O_o</code> → <code>o_O</code> → <code>&gt;_&lt;</code>. Это не сбой, это характер.</li>
+<li><b>Скринсейвер.</b> Если включён в настройках, раз в 5 минут экран на 10 секунд заливается цветным шумом. Это бережёт от выгорания одну и ту же картинку.</li>
+<li><b>80-е.</b> Переключение экранов, хулиганство и оповещения сопровождаются VHS-помехами: снег, разрыв строк, RGB-сдвиг. Набор эффектов и их сила — в <a href="#settings">настройках</a>.</li>
+<li><b>Часовой пояс</b> определяется сам по IP-адресу. Время синхронизируется по интернету (NTP).</li>
+</ul>
+</section>
+
+<!-- ═══════════════════════════════ 7 ═══════════════════════════════ -->
+<section id="button">
+<h2><span class="n">07</span> Кнопка</h2>
+<p>У Blin одна кнопка — <kbd>0</kbd> (Boot) на плате. В корпусе это всё дно: нажмите на макушку устройства.</p>
+<table>
+<tr><th>Действие</th><th>Что произойдёт</th></tr>
+<tr><td>1 нажатие</td><td>Следующий экран (по кругу).</td></tr>
+<tr><td>2 нажатия</td><td>Заглушить / включить все звуковые оповещения. Колокольчик на экране станет серым / белым.</td></tr>
+<tr><td>3 нажатия</td><td>Повернуть экран на 90° по часовой.</td></tr>
+<tr><td>Удерживать 3 с</td><td>Предупреждение «Сброс…» — ещё можно отпустить.</td></tr>
+<tr><td>Удерживать 5 с</td><td><b>Полный сброс</b>: Wi-Fi, MQTT, экраны и история стираются, Blin перезагружается в <a href="#ap">режим AP</a>.</td></tr>
+</table>
+<div class="note"><b>Совет.</b> Перед сбросом сохраните настройки экранов: админка → «Импорт / Экспорт» → «Экспортировать настройки». Потом их можно загрузить обратно одним файлом.</div>
+</section>
+
+<!-- ═══════════════════════════════ 8 ═══════════════════════════════ -->
+<section id="mqtt">
+<h2><span class="n">08</span> MQTT: откуда берутся данные</h2>
+<h3>Что такое MQTT — простыми словами</h3>
+<p>MQTT — это «почтовое отделение» для умного дома. Посередине стоит <b>брокер</b> — небольшая программа на компьютере, Raspberry Pi, сервере Home Assistant или в облаке. Устройства не общаются друг с другом напрямую. Датчик <b>публикует</b> сообщение в <b>топик</b> — адрес вида <code>home/kitchen/temperature</code>. Все, кто <b>подписан</b> на этот топик, тут же получают сообщение.</p>
+<figure>
+<svg viewBox="0 0 760 170" width="760" role="img" aria-label="Схема: датчик публикует в брокер, Blin подписан">
+<style>.b{fill:#fff;stroke:#000;stroke-width:1}.h{font:600 14px 'JetBrains Mono',monospace}.m{font:500 11px 'JetBrains Mono',monospace;fill:#555}</style>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="b" x="10" y="45" width="190" height="80" rx="4"/><text class="h" x="24" y="76">Датчик</text><text class="m" x="24" y="98">Zigbee, ESP, HA…</text>
+<rect class="b" x="285" y="45" width="190" height="80" rx="4"/><text class="h" x="299" y="76">MQTT-брокер</text><text class="m" x="299" y="98">Mosquitto, HA, облако</text>
+<rect class="b" x="560" y="45" width="190" height="80" rx="4"/><text class="h" x="574" y="76">Blin</text><text class="m" x="574" y="98">подписан на топик</text>
+<line x1="200" y1="85" x2="282" y2="85" stroke="#000" marker-end="url(#ar)"/>
+<line x1="475" y1="85" x2="557" y2="85" stroke="#000" marker-end="url(#ar)"/>
+<text class="m" x="206" y="30">публикует</text><text class="m" x="206" y="44">«21.5»</text>
+<text class="m" x="481" y="30">доставляет</text><text class="m" x="481" y="44">всем подписчикам</text>
+<text class="m" x="24" y="152">топик: home/kitchen/temperature</text>
+</svg>
+</figure>
+<p>Удобно, что одну температуру одновременно видят Blin, Home Assistant, телефон и кто угодно ещё. А Blin достаточно знать адрес брокера и названия топиков.</p>
+
+<h3>Где взять брокер</h3>
+<ul>
+<li><b>Home Assistant</b> — дополнение «Mosquitto broker». Если у вас Zigbee2MQTT, брокер уже есть.</li>
+<li><b>Отдельно</b> — Mosquitto на любом компьютере или Raspberry Pi в домашней сети. Стандартный порт — <code>1883</code>.</li>
+<li><b>В облаке</b> — например, HiveMQ Cloud. Для облака используйте порт <code>8883</code>: на этом порту Blin сам включает шифрование (TLS). Логин и пароль — из панели облачного брокера.</li>
+</ul>
+
+<h3>Что Blin ждёт в топиках</h3>
+<p>У каждого экрана два топика. Свои значения задаются в настройках экрана.</p>
+<table>
+<tr><th>Топик</th><th>Что в нём</th><th>Пример сообщения</th></tr>
+<tr><td>температура</td><td><b>Просто число</b> в градусах, точка как разделитель. Не JSON, без единиц измерения.</td><td><code>21.5</code>, <code>-3</code></td></tr>
+<tr><td>экстра-иконка<br><span style="color:var(--mute)">(необязательный)</span></td><td>Одно из слов: <code>heater_on</code>, <code>heater_off</code>, <code>cooler_on</code>, <code>cooler_off</code>, <code>none</code>. См. <a href="#extra">Экстра-иконки</a>.</td><td><code>heater_on</code></td></tr>
+</table>
+<p>По умолчанию у первого экрана топики <code>blin_XXXXXX/screen_1/temperature</code> и <code>blin_XXXXXX/screen_1/extra_icon</code> (XXXXXX — как в имени AP-сети). Но лучше указать топики, в которые <b>уже пишут ваши датчики</b>.</p>
+<p>Минимум, максимум и график присылать не нужно: Blin считает их сам. Каждое пришедшее число попадает в среднее за текущий час.</p>
+<div class="note warn"><b>JSON не подходит.</b> Многие датчики (например, Zigbee2MQTT) шлют объект вида <code>{"temperature":21.5,"humidity":40}</code>. Blin такое сообщение не разберёт. Нужен отдельный топик только с числом — сделать его помогут Home Assistant или Node-RED (пример ниже).</div>
+
+<h3>Проверка с компьютера</h3>
+<p>Утилита <code>mosquitto_pub</code> входит в пакет Mosquitto. Отправьте число в топик экрана — Blin покажет его через долю секунды:</p>
+<pre><code>mosquitto_pub -h 192.168.1.10 -t home/kitchen/temperature -m 21.5 -r
+mosquitto_pub -h 192.168.1.10 -t home/kitchen/heater -m heater_on -r
+<span class="c"># с логином:  -u user -P password      облако:  -p 8883 --capath /etc/ssl/certs</span></code></pre>
+<p>Флаг <code>-r</code> (retained) просит брокер запомнить последнее значение. Тогда Blin получит его сразу после перезагрузки, не дожидаясь следующего замера. Советуем публиковать температуру именно так.</p>
+
+<h3>Home Assistant: датчик → Blin</h3>
+<p>Автоматизация, которая пересылает показания любого сенсора HA в топик Blin при каждом изменении:</p>
+<pre><code>alias: Blin — кухня
+triggers:
+  - trigger: state
+    entity_id: sensor.kitchen_temperature
+actions:
+  - action: mqtt.publish
+    data:
+      topic: home/kitchen/temperature
+      payload: "{{ states('sensor.kitchen_temperature') }}"
+      retain: true</code></pre>
+<p>Так же для обогревателя или кондиционера — публикуйте <code>heater_on</code> / <code>heater_off</code> по состоянию выключателя:</p>
+<pre><code>alias: Blin — обогреватель теплицы
+triggers:
+  - trigger: state
+    entity_id: switch.greenhouse_heater
+actions:
+  - action: mqtt.publish
+    data:
+      topic: home/greenhouse/heater
+      payload: "{{ 'heater_on' if is_state('switch.greenhouse_heater', 'on') else 'heater_off' }}"
+      retain: true</code></pre>
+
+<h3>Служебные топики Blin</h3>
+<p>Кроме ваших топиков, Blin использует несколько своих — всё начинается с <code>blin/</code>. Трогать их не нужно, но полезно знать, что это не мусор:</p>
+<ul>
+<li><code>blin/devices/…</code> — «визитки» устройств для списка «Устройства Blin»;</li>
+<li><code>blin/leader/cfg</code> — настройки ведущего для ведомых;</li>
+<li><code>blin/sync/…</code> — после перезагрузки Blin спрашивает у соседей график за пропущенные часы, если они показывают тот же топик.</li>
+</ul>
+<p>Если брокер раздаёт права по топикам (ACL), разрешите Blin читать и писать в <code>blin/#</code>.</p>
+</section>
+
+<!-- ═══════════════════════════════ 9 ═══════════════════════════════ -->
+<section id="admin">
+<h2><span class="n">09</span> Веб-админка</h2>
+<p>У каждого Blin есть своя страница управления. Откройте в браузере на телефоне или компьютере в той же сети:</p>
+<ul>
+<li><b>IP-адрес</b> устройства, например <code>http://192.168.1.33</code>. Его показывает экран при первом запуске, роутер в списке клиентов и любой другой Blin в блоке «Устройства Blin»;</li>
+<li>или <b>имя</b>: <code>http://blin-xxxxxx.local</code>. Имя задаётся в настройках, по умолчанию — <code>blin-</code> и хвост MAC-адреса.</li>
+</ul>
+<figure class="frame">
+<img src="img/admin_main.jpg" width="1600" alt="Главная страница админки">
+<figcaption>Админка на компьютере. Сверху — вкладки экранов: название, температура, максимум и минимум, цветная полоса зоны, ★ у главного экрана. Справа «+» — добавить экран, шестерёнка — настройки устройства. Слева — открытый экран крупно и график за сутки с подписями часов. Справа — настройки этого экрана.</figcaption>
+</figure>
+<div class="row2 wide-l">
+<div>
+<p>Страница обновляется сама. Пока она открыта:</p>
+<ul>
+<li>favicon вкладки браузера показывает температуру главного экрана и красится в цвет его зоны;</li>
+<li>если включено «Дублировать оповещения в браузере», страница пищит вместе с устройством;</li>
+<li>внизу — IP, имя, Wi-Fi и сила сигнала, состояние MQTT, время работы, температура чипа и версия прошивки.</li>
+</ul>
+<p>На телефоне вкладки сворачиваются в меню ☰. Админку можно <b>добавить на домашний экран</b> («На экран Домой» в Safari, «Установить приложение» в Chrome) — она откроется как отдельное приложение.</p>
+<p>Внизу страницы — три кнопки: «Обновление прошивки», «Импорт / Экспорт» и «Лог устройства» (последние 20 событий: подключения, ошибки, синхронизация).</p>
+</div>
+<figure class="frame"><img src="img/admin_mobile.jpg" width="780" alt="Админка на телефоне" style="max-width:300px;margin:0 auto"><figcaption style="text-align:center">Админка на телефоне.</figcaption></figure>
+</div>
+</section>
+
+<!-- ═══════════════════════════════ 10 ═══════════════════════════════ -->
+<section id="pages">
+<h2><span class="n">10</span> Экраны (страницы)</h2>
+<p>Экран — это один источник температуры со своим названием, шкалой, порогами и графиком. Их может быть от 1 до 6.</p>
+<div class="row2">
+<div>
+<h3 style="margin-top:6px">Добавить экран</h3>
+<ol class="steps">
+<li>Нажмите «+» справа от вкладок.</li>
+<li>Введите название — оно будет и на вкладке, и на экране устройства. Пишите коротко: на круглом экране помещается около 15 символов.</li>
+<li>Введите MQTT-топик температуры и нажмите «Добавить».</li>
+<li>Устройство перезагрузится. Откройте новую вкладку и настройте шкалу и пороги.</li>
+</ol>
+</div>
+<figure class="frame"><img src="img/modal_add.png" width="460" alt="Окно добавления экрана" style="max-width:340px"><figcaption>Окно «Добавить экран».</figcaption></figure>
+</div>
+<h3>Настроить экран</h3>
+<p>Откройте вкладку экрана. Справа:</p>
+<ul>
+<li><b>шкала, зоны и оповещения</b> — один составной ползунок, о нём <a href="#sliders">ниже</a>;</li>
+<li><b>MQTT-топик температуры</b> — обязательный;</li>
+<li><b>MQTT-топик экстра-иконки</b> — по желанию;</li>
+<li><b>название экрана</b>.</li>
+</ul>
+<p>«Сохранить настройки» применяет изменения этого экрана — устройство перезагрузится за несколько секунд, график и моточасы сохранятся.</p>
+<h3>Главный экран</h3>
+<p>Один экран — главный, на его вкладке ★. Его температура видна <b>всегда</b>: в нижней панели устройства на любом экране и в favicon браузера. Назначьте главным самое важное — например, «На улице». Кнопка «Сделать главным экраном» есть на вкладке любого экрана.</p>
+<p>Главный экран выбирается на каждом устройстве отдельно: на кухонном Blin главной может быть кухня, в спальне — улица.</p>
+<h3>Удалить экран</h3>
+<p>Удалять можно только <b>последний</b> экран — крайнюю правую вкладку. Кнопка «Удалить экран» есть только на ней, и только если этот экран не главный. Удаление нельзя отменить: настройки и график экрана пропадут. Единственный экран удалить нельзя.</p>
+<p>Убрать экран из середины можно так: перенесите в него настройки следующих экранов (топик, название, ползунки), а освободившийся последний удалите.</p>
+<div class="note"><b>Один топик на двух экранах</b> — можно. Например, одна и та же улица с разными шкалами: летней и зимней.</div>
+</section>
+
+<!-- ═══════════════════════════════ 11 ═══════════════════════════════ -->
+<section id="sliders">
+<h2><span class="n">11</span> Ползунки температуры</h2>
+<p>На вкладке каждого экрана — один составной ползунок, который задаёт сразу три вещи: <b>шкалу</b>, <b>климатические зоны</b> и <b>пороги оповещений</b>.</p>
+<figure class="frame" style="max-width:720px"><img src="img/slider.png" width="828" alt="Ползунок: шкала 0–50, зоны 7 и 32, колокольчики 4 и 36"></figure>
+<dl class="kv">
+<dt>Края — шкала</dt><dd>Белые поля по краям (<code>0</code> и <code>50</code>) — минимум и максимум <b>дуги</b> на экране устройства. В них можно вписать любые числа, в том числе отрицательные. Подберите так, чтобы обычная температура этого места занимала середину дуги: для комнаты 10…35, для улицы −20…+35, для морозилки −30…0.</dd>
+<dt>Флажки сверху — зоны</dt><dd>Два чёрных флажка (<code>7</code> и <code>32</code>) — границы зон. Ниже левого — <span class="chip" style="background:var(--c-cold)"></span>холодно, между ними — <span class="chip" style="background:var(--c-norm)"></span>норма, выше правого — <span class="chip" style="background:var(--c-hot)"></span>жарко. Зона определяет цвет дуги, столбиков графика, полосы вкладки и — для главного экрана — нижней панели и favicon. Сама по себе смена зоны не пищит.</dd>
+<dt>Колокольчики снизу — оповещения</dt><dd>Два колокольчика (<code>4</code> и <code>36</code>) — пороги <b>звуковых оповещений</b>. Работают, только если отмечены галочки «Оповещение нижнего порога» / «Оповещение верхнего порога». Тогда пороги появляются на дуге устройства белыми кружками.</dd>
+</dl>
+<p>Тянуть можно и сами ручки, и подписи с числами. Ручки не заходят друг за друга: нижняя граница зоны не станет выше верхней. Значения — целые градусы.</p>
+<div class="note ok"><b>Как думать о порогах.</b> Зоны — «как сейчас»: цвет, который видно краем глаза. Колокольчики — «пора вмешаться»: их ставят дальше зон, у опасных значений. Например, для теплицы: зоны 12 и 30 (холодновато / жарковато), колокольчики 5 и 38 (заморозки / перегрев).</div>
+</section>
+
+<!-- ═══════════════════════════════ 12 ═══════════════════════════════ -->
+<section id="alerts">
+<h2><span class="n">12</span> Оповещения</h2>
+<h3>Температура за порогом</h3>
+<p>Когда температура пересекает включённый порог колокольчика, Blin:</p>
+<ul>
+<li>пару секунд мигает: голубой экран со <b>снежинкой</b> при холоде, красный с <b>пламенем</b> при жаре;</li>
+<li>трижды пищит;</li>
+<li>если открыта админка с включённым «Дублировать оповещения в браузере» — пищит и браузер.</li>
+</ul>
+<p>Оповещение срабатывает один раз при пересечении порога. Следующее будет, только когда температура вернётся за порог и снова его пересечёт.</p>
+<div class="note warn"><b>Важно:</b> пороги проверяются для экрана, который <b>сейчас открыт</b> на устройстве. Если нужно всегда следить за одним местом, держите на Blin именно этот экран — или поставьте для него отдельный Blin.</div>
+<h3>Потеря связи с брокером</h3>
+<p>Если MQTT-брокер недоступен <b>3 минуты подряд</b>, Blin даёт другой сигнал — два писка вниз по тону, «дин-дон». Сигнал повторяется раз в минуту, пока связь не вернётся. Так не пропустишь, что данные перестали обновляться.</p>
+<h3>Тишина</h3>
+<ul>
+<li><b>Двойное нажатие</b> кнопки глушит все звуки (и температурные, и «дин-дон»). Повторное — включает обратно. Колокольчик на экране показывает состояние.</li>
+<li>Галочка «Звуковые оповещения» в настройках — то же самое из админки.</li>
+<li>«Протестировать звук» в настройках коротко пищит устройством и браузером. Браузеры разрешают звук только после клика на странице, поэтому дублирование заработает после первого клика по админке.</li>
+</ul>
+</section>
+
+<!-- ═══════════════════════════════ 13 ═══════════════════════════════ -->
+<section id="extra">
+<h2><span class="n">13</span> Экстра-иконки и моточасы</h2>
+<p>Температура — следствие. Часто хочется видеть и причину: <b>работает ли сейчас обогреватель или кулер</b> (кондиционер, вентилятор, компрессор). Для этого у каждого экрана есть второй, необязательный топик — экстра-иконка.</p>
+<table>
+<tr><th>Сообщение</th><th>Экран устройства</th></tr>
+<tr><td><code>heater_on</code></td><td>белая иконка обогревателя — работает</td></tr>
+<tr><td><code>heater_off</code></td><td>серая иконка обогревателя — выключен</td></tr>
+<tr><td><code>cooler_on</code></td><td>белая иконка кулера — работает</td></tr>
+<tr><td><code>cooler_off</code></td><td>серая иконка кулера — выключен</td></tr>
+<tr><td><code>none</code></td><td>иконки нет</td></tr>
+</table>
+<p>В топике всегда одно состояние: <code>cooler_on</code> означает «кулер работает, обогреватель нет». Одновременно работающим может быть только один из двух — для отопления и кондиционера в одной комнате так и есть.</p>
+<h3>Моточасы</h3>
+<p>Blin считает, <b>сколько часов за последние сутки</b> работал каждый прибор. Это видно в админке, над большой температурой: обе иконки рядом, работающая — чёрная, выключенная — бледная. Под каждой — часы работы за 24 часа, например <code>3.5</code>.</p>
+<p>Считает само устройство, а не браузер, поэтому моточасы верны, даже если админку месяц никто не открывал. Счётчик переживает перезагрузку и обновление прошивки.</p>
+<div class="note ok"><b>Зачем это.</b> Обогреватель теплицы работал 16 часов из 24 — значит, утепление не справляется или термостат выставлен слишком высоко. Кулер серверной не выключается — пора чистить фильтр.</div>
+</section>
+
+<!-- ═══════════════════════════════ 14 ═══════════════════════════════ -->
+<section id="settings">
+<h2><span class="n">14</span> Настройки устройства</h2>
+<p>Шестерёнка справа от вкладок. Почти все изменения применяются кнопкой «Сохранить и перезагрузить» внизу — устройство перезагружается за несколько секунд.</p>
+<figure class="frame"><img src="img/admin_settings.jpg" width="1600" alt="Страница настроек целиком" loading="lazy"><figcaption>Настройки целиком. Подробнее по блокам — ниже.</figcaption></figure>
+
+<h3>Подключение</h3>
+<div class="row2">
+<figure class="frame" style="margin-top:4px"><img src="img/set_net.png" width="840" alt="Блок Подключение" loading="lazy"></figure>
+<div>
+<p>Wi-Fi, MQTT-брокер, логин и пароль брокера — то же, что в <a href="#ap">портале</a>. Сохранённые пароли не показываются: пустое поле «Сохранён» значит «оставить как есть».</p>
+<p><b>Имя в сети</b> — по нему админка открывается как <code>http://имя.local</code>, его же видно в роутере и в списке «Устройства Blin». Латиница, цифры и дефис.</p>
+</div>
+</div>
+
+<h3>Оформление и эффекты</h3>
+<div class="row2">
+<div>
+<ul>
+<li><b>Цвета зон</b> — холод, норма, жара и «ожидание» (жёлтый: нет данных, датчик молчит). Применяются к экрану устройства, графику и вкладкам. «Сбросить к исходным цветам» возвращает заводские.</li>
+<li><b>Пресет оформления</b> — готовые схемы. «Стандартная» — заводская. «Pip-Boy» — зелёный монохром с картинкой на фоне и CRT-линиями, как в Fallout.</li>
+<li><b>Поворот экрана</b> — 0/90/180/270°.</li>
+<li><b>Скринсейвер</b> — периодическая заливка шумом, бережёт экран.</li>
+<li><b>Тема интерфейса</b> — светлая или тёмная админка; к экрану устройства не относится.</li>
+<li><b>Визуальные эффекты</b> — 80-е: VHS-снег, разрыв строк, RGB-аберрация (сила каждого — ползунком), CRT-сканлайны поверх экрана, звёздное небо на фоне. «Нравственный закон во мне» — пара к звёздному небу, дань Канту.</li>
+</ul>
+</div>
+<figure class="frame" style="margin-top:4px"><img src="img/set_look.png" width="840" alt="Блоки Оформление и Визуальные эффекты" loading="lazy"></figure>
+</div>
+
+<h3>Скриншот с устройства</h3>
+<p>Блок показывает, что сейчас на экране Blin, — удобно, если устройство в другой комнате. Стрелки ← → переключают экраны устройства прямо отсюда, «Обновить» делает новый снимок.</p>
+
+<h3>Аудио</h3>
+<ul>
+<li><b>Звуковые оповещения</b> — общий выключатель звука (то же, что двойное нажатие кнопки).</li>
+<li><b>Дублировать оповещения в браузере</b> — открытая админка пищит вместе с устройством.</li>
+</ul>
+
+<h3>Администратор, локализация, синхронизация</h3>
+<div class="row2">
+<figure class="frame" style="margin-top:4px"><img src="img/set_sync.png" width="840" alt="Блоки Администратор, Локализация, Синхронизация, Устройства Blin" loading="lazy"></figure>
+<div>
+<p><b>Администратор</b> — логин и пароль для админки, см. <a href="#auth">Пароль и гостевой режим</a>.</p>
+<p><b>Локализация</b> — язык админки и надписей на экране устройства.</p>
+<p><b>Синхронизация</b> и <b>Устройства Blin</b> — см. <a href="#lead">Ведущий и ведомые</a>.</p>
+</div>
+</div>
+<p>Внизу — <b>«Сбросить все настройки»</b>: то же, что удержание кнопки 5 секунд. Стирает всё, включая Wi-Fi, и переводит Blin в режим AP.</p>
+</section>
+
+<!-- ═══════════════════════════════ 15 ═══════════════════════════════ -->
+<section id="auth">
+<h2><span class="n">15</span> Пароль и гостевой режим</h2>
+<p>По умолчанию админка открыта всем в вашей сети. Если Blin стоит там, где сеть общая (офис, гости, дача с соседями), задайте логин и пароль в блоке «Администратор» (пароль — от 4 символов).</p>
+<ul>
+<li>Без входа админка показывает только температуры и графики — <b>гостевой режим</b>. Шестерёнки и настроек экранов не видно.</li>
+<li>Чтобы войти, нажмите кнопку с человечком внизу страницы, рядом с «Обновление прошивки», и введите логин и пароль. Браузер запомнит вход. Там же — выход.</li>
+<li><b>«Закрыть /api авторизацией»</b> (включено по умолчанию) дополнительно прячет от гостей служебные данные — адреса устройства и соседей в сети.</li>
+<li>Пароль нужен и для роли <a href="#lead">ведущего</a>: иначе любой в сети мог бы через него менять настройки всех Blin.</li>
+</ul>
+<div class="note warn"><b>Забыли пароль?</b> Поможет только полный сброс кнопкой (удержание 5 с). Поэтому заранее сделайте экспорт настроек.</div>
+</section>
+
+<!-- ═══════════════════════════════ 16 ═══════════════════════════════ -->
+<section id="lead">
+<h2><span class="n">16</span> Ведущий и ведомые</h2>
+<p>Когда Blin в доме несколько, настраивать каждый по отдельности утомительно. Назначьте один <b>ведущим</b>, остальные — <b>ведомыми</b>. Всё, что вы меняете на ведущем, через несколько секунд само появится на ведомых.</p>
+<h3>Что синхронизируется, а что нет</h3>
+<div class="row2">
+<div>
+<h4>Передаётся ведомым</h4>
+<ul>
+<li>набор экранов: названия, топики, шкалы, зоны, оповещения;</li>
+<li>цвета, пресет, фон, эффекты, скринсейвер;</li>
+<li>язык и тема админки, автообновление, дублирование оповещений в браузере, «Закрыть /api».</li>
+</ul>
+</div>
+<div>
+<h4>У каждого своё</h4>
+<ul>
+<li>Wi-Fi, MQTT, логин и пароль;</li>
+<li>имя устройства;</li>
+<li>поворот экрана — Blin может стоять по-разному;</li>
+<li>главный экран;</li>
+<li>история температур;</li>
+<li>мут звука (двойное нажатие кнопки).</li>
+</ul>
+</div>
+</div>
+<h3>Как настроить</h3>
+<ol class="steps">
+<li>На будущем ведущем задайте логин и пароль администратора и сохраните — без пароля ведущим стать нельзя.</li>
+<li>Там же, в блоке «Синхронизация», отметьте «Ведущее устройство» и сохраните.</li>
+<li>На остальных отметьте «Синхронизироваться с ведущим». Для нового Blin это можно сделать прямо в портале режима AP.</li>
+<li>Ведомый перезагрузится уже с настройками ведущего. В блоке «Синхронизация» он покажет «Ведущий в сети: <i>имя</i>».</li>
+</ol>
+<h3>Правила</h3>
+<ul>
+<li><b>Ведущий всегда один</b> — последний назначенный. Отметили ведущим другое устройство — прежний сам станет ведомым и подтянет настройки нового.</li>
+<li><b>Правки на ведомом откатываются.</b> Поменяли что-то из общих настроек на ведомом — он вернёт настройки ведущего. Хотите отличий — снимите галочку синхронизации.</li>
+<li>История на ведомом сохраняется, если не поменялись число экранов и их топики. Иначе график начнётся заново.</li>
+<li>Ведущий может быть выключен: ведомые помнят последние полученные настройки, а брокер хранит их до его возвращения.</li>
+</ul>
+<h3>Устройства Blin</h3>
+<p>Блок в настройках показывает все Blin на том же брокере: имя, IP-адрес (ссылкой — в один клик к админке соседа), версию прошивки, роль и состояние. Зелёная точка — в сети, серая — давно не выходил на связь, красная — выключен. Список обновляется сам.</p>
+<p>Устройство, которое вы больше не используете, остаётся в списке как «выключено». Чтобы убрать его совсем, удалите его retained-запись на брокере:</p>
+<pre><code>mosquitto_pub -h 192.168.1.10 -t blin/devices/blin-XXXXXX -r -n</code></pre>
+</section>
+
+<!-- ═══════════════════════════════ 17 ═══════════════════════════════ -->
+<section id="service">
+<h2><span class="n">17</span> Обновления, бэкап, сброс</h2>
+<div class="row2">
+<div>
+<h3 style="margin-top:6px">Импорт и экспорт</h3>
+<p>«Импорт / Экспорт» внизу админки.</p>
+<ul>
+<li><b>Экспортировать настройки</b> — скачивает текстовый файл: экраны, цвета, эффекты и прочие настройки. Wi-Fi и пароли туда не попадают.</li>
+<li><b>Импортировать</b> — загружает такой файл. Подходит для восстановления после сброса и для переноса настроек на другой Blin без синхронизации. Импорт заменяет все экраны и <b>стирает историю температур</b>.</li>
+</ul>
+</div>
+<figure class="frame"><img src="img/modal_io.png" width="460" alt="Окно импорта и экспорта" style="max-width:340px" loading="lazy"><figcaption>Окно «Импорт / Экспорт».</figcaption></figure>
+</div>
+<h3>Лог устройства</h3>
+<p>Последние 20 событий с временем: подключение к Wi-Fi и MQTT, обрывы, проверки обновлений, синхронизация с ведущим. Первое, куда стоит смотреть, если что-то пошло не так.</p>
+<h3>Что где хранится</h3>
+<p>Настройки и график за сутки хранятся в памяти устройства и переживают отключение питания и обновление прошивки. Стирают их только полный сброс, импорт и прошивка по USB с флажком «Стереть плату целиком».</p>
+</section>
+
+<!-- ═══════════════════════════════ 18 ═══════════════════════════════ -->
+<section id="cases">
+<h2><span class="n">18</span> Сценарии использования</h2>
+<div class="scen">
+<div><h4>Дом и улица</h4>
+<p>Два экрана: «Дом» (шкала 10…35, зоны 19/26) и «На улице» (−25…+35, зоны 0/25). Главный — улица: её температура всегда в нижней панели, а на главном экране — часы.</p></div>
+<div><h4>Теплица с обогревателем</h4>
+<p>Экран «Теплица», зоны 12/30, колокольчики 5 и 38. Топик экстра-иконки — состояние реле обогревателя (<code>heater_on</code>/<code>heater_off</code>). Моточасы покажут, сколько он грел за ночь.</p></div>
+<div><h4>Холодильник и морозилка</h4>
+<p>Морозилка: шкала −30…0, зоны −22/−15, верхний колокольчик на −10 — пищит, если дверь не закрылась. Отрицательные часы графика растут вниз от нуля.</p></div>
+<div><h4>Серверная или кладовка</h4>
+<p>Экран со шкалой 15…45, верхний колокольчик на 35, экстра-иконка — кондиционер (<code>cooler_on</code>/<code>cooler_off</code>). Пропал брокер — Blin сам скажет «дин-дон».</p></div>
+<div><h4>Несколько комнат — несколько Blin</h4>
+<p>Кухонный Blin — ведущий, в спальне и детской — ведомые. Экраны и пороги правятся в одном месте, а главный экран у каждого свой: в детской — детская, на кухне — улица.</p></div>
+<div><h4>Дача</h4>
+<p>Облачный брокер (порт 8883) — и Blin в городской квартире показывает температуру в дачном доме. Колокольчик на +3 предупредит, что отопление отключилось, «дин-дон» — что пропала связь.</p></div>
+<div><h4>Подарок</h4>
+<p>Соберите, прошейте и отдайте: при первом включении получатель сам настроит Wi-Fi через QR-код на экране. Ваш облачный брокер и топики можно вписать заранее.</p></div>
+<div><h4>Издалека</h4>
+<p>Админка не нужна, чтобы смотреть: добавьте её на домашний экран телефона, включите «Дублировать оповещения в браузере» и держите вкладку открытой на рабочем компьютере.</p></div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════ 19 ═══════════════════════════════ -->
+<section id="faq" class="faq">
+<h2><span class="n">19</span> Если что-то не так</h2>
+<details><summary>Экран горит, но ничего не показывает</summary><div>Плата не прошита или прошивка не запустилась. Прошейте с сайта (<a href="#flash">раздел 04</a>) и нажмите <kbd>RST</kbd>. Если после прошивки по-прежнему пусто, проверьте пайку гребёнки: все 7 пинов, особенно <code>VCC</code>–<code>VBUS</code> и <code>GND</code>.</div></details>
+<details><summary>Прошивальщик не видит плату</summary><div>Нужен Chrome или Edge на компьютере, не на телефоне. Плата должна быть в режиме загрузки: зажать <kbd>0</kbd>, нажать и отпустить <kbd>RST</kbd>, отпустить <kbd>0</kbd>. Проверьте кабель — некоторые USB-C кабели только заряжают. На Windows иногда помогает другой USB-порт.</div></details>
+<details><summary>Не появляется сеть blin_XXXXXX</summary><div>Устройство уже знает какой-то Wi-Fi и подключилось к нему. Найдите его IP в роутере. Если доступа нет — удерживайте кнопку 5 секунд: полный сброс вернёт режим AP.</div></details>
+<details><summary>Портал настройки не открылся сам</summary><div>Некоторые телефоны не показывают его автоматически. Оставайтесь подключёнными к <code>blin_XXXXXX</code> и откройте в браузере <code>http://192.168.4.1</code>. Если телефон отключается от сети «без интернета», разрешите ему остаться в ней.</div></details>
+<details><summary>После сохранения Blin снова показывает QR-код</summary><div>Не подключился к Wi-Fi за ~12 секунд. Проверьте имя сети и пароль (с учётом регистра) и что сеть 2,4 ГГц. Если роутер просто был выключен — перезагрузите Blin, когда сеть появится.</div></details>
+<details><summary>Вместо цифр всё время «O_o»</summary><div>Данные по этому экрану не приходят. Проверьте по порядку: в подвале админки MQTT «Подключён»? Топик экрана совпадает с тем, куда пишет датчик, буква в букву? В топике — просто число, а не JSON? Проверьте вручную через <code>mosquitto_pub</code> (<a href="#mqtt">раздел 08</a>). Подсказки — в «Логе устройства».</div></details>
+<details><summary>MQTT «Отключен»</summary><div>Проверьте адрес и порт брокера, логин и пароль. Для облачного брокера нужен порт <code>8883</code>. Брокер должен быть доступен из той же сети, где Blin. Если брокер раздаёт права по топикам, разрешите <code>blin/#</code>.</div></details>
+<details><summary>Экран пожелтел</summary><div>По этому экрану 3 минуты не было новых значений, хотя MQTT работает. Скорее всего, сел или отвалился датчик. Если датчик шлёт данные реже раза в 3 минуты, экран будет желтеть между замерами — настройте отправку чаще или публикуйте с retained.</div></details>
+<details><summary>Картинка вверх ногами или на боку</summary><div>Тройное нажатие кнопки поворачивает на 90°. Или выберите угол в настройках → «Поворот экрана».</div></details>
+<details><summary>Пищит «дин-дон» каждую минуту</summary><div>Blin потерял связь с MQTT-брокером больше 3 минут назад. Проверьте брокер. Заглушить — двойное нажатие кнопки, но тогда замолчат и температурные оповещения.</div></details>
+<details><summary>Кнопка-дно не нажимается или срабатывает сама</summary><div>Зависит от печати. Подробности о подгонке — в описании корпуса (кнопка «Модели корпуса» на главной). Корпус проще всего проверить, нажав на макушку устройства, а не на край.</div></details>
+<details><summary>Настройки на ведомом сами возвращаются</summary><div>Так и задумано: ведомый повторяет ведущего. Меняйте на ведущем или снимите галочку «Синхронизироваться с ведущим».</div></details>
+</section>
+
+<!-- ═══════════════════════════════ 20 ═══════════════════════════════ -->
+<section id="ref">
+<h2><span class="n">20</span> Справочник</h2>
+<h3>Железо</h3>
+<table>
+<tr><th>Параметр</th><th>Значение</th></tr>
+<tr><td>Плата</td><td>Wemos Lolin S2 Mini, ESP32-S2 240 МГц, 4 МБ флеш, 2 МБ PSRAM, нативный USB</td></tr>
+<tr><td>Дисплей</td><td>GC9A01, 240×240, круглый, SPI: CLK 16, MOSI 18, DC 33, CS 35, RST 37</td></tr>
+<tr><td>Зуммер</td><td>GPIO 34, резонанс 2800 Гц</td></tr>
+<tr><td>Кнопка</td><td>GPIO 0 (Boot)</td></tr>
+<tr><td>Wi-Fi</td><td>2,4 ГГц</td></tr>
+</table>
+<h3>Сроки и интервалы</h3>
+<table>
+<tr><th>Что</th><th>Сколько</th></tr>
+<tr><td>Ожидание Wi-Fi при старте</td><td>~12 с, затем режим AP</td></tr>
+<tr><td>Экран желтеет без данных</td><td>3 мин</td></tr>
+<tr><td>Сигнал потери MQTT</td><td>через 3 мин, повтор раз в минуту</td></tr>
+<tr><td>Проверка обновлений</td><td>раз в 6 ч</td></tr>
+<tr><td>Хулиганская анимация</td><td>раз в 20–40 мин</td></tr>
+<tr><td>Скринсейвер</td><td>раз в 5 мин, 10 с</td></tr>
+<tr><td>График</td><td>24 часа, столбик = среднее за час</td></tr>
+<tr><td>Экранов</td><td>до 6</td></tr>
+</table>
+<h3>Адреса устройства</h3>
+<p>Для тех, кто хочет встроить Blin в свои скрипты:</p>
+<table>
+<tr><th>Адрес</th><th>Что отдаёт</th></tr>
+<tr><td><code>/</code></td><td>админка</td></tr>
+<tr><td><code>/api</code></td><td>состояние в JSON: все экраны, температуры, история, моточасы, время, статус MQTT</td></tr>
+<tr><td><code>/screenshot</code></td><td>снимок экрана, BMP 240×240</td></tr>
+<tr><td><code>/peers</code></td><td>список других Blin на брокере</td></tr>
+<tr><td><code>/screens/export</code></td><td>файл настроек (как кнопка «Экспортировать»)</td></tr>
+</table>
+<p>Если задан пароль и включено «Закрыть /api авторизацией», служебные поля <code>/api</code> отдаются только после входа.</p>
+<a class="top" href="#about">↑ к началу</a>
+</section>
+</main>
+</div>
+</div>
+
+<footer class="ftr"><a class="btn-outline back" href="../" style="height:40px;font-size:14px;padding:0 16px">← На главную</a></footer>
+
+<script>
+// Схема пайки: 7 пинов дисплея над 7 отверстиями S2 Mini
+(function(){
+  var g=document.getElementById('w'), NS='http://www.w3.org/2000/svg';
+  var top=['VCC','GND','SCL','SDA','DC','CS','RST'], bot=['VBUS','GND','16','18','33','35','37'];
+  function el(n,a,t){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);if(t)e.textContent=t;g.appendChild(e);return e;}
+  for(var i=0;i<7;i++){
+    var x=110+i*90;
+    el('line',{x1:x,y1:76,x2:x,y2:224,stroke:i===0?'#c00':(i===1?'#000':'#b8860b'),'stroke-width':3});
+    el('circle',{cx:x,cy:66,r:6,fill:'#e0b84a',stroke:'#000'});
+    el('circle',{cx:x,cy:234,r:6,fill:'#e0b84a',stroke:'#000'});
+    el('rect',{x:x-34,y:96,width:68,height:26,rx:4,fill:'#fff',stroke:'#000'});
+    el('text',{x:x,y:114,'text-anchor':'middle','class':'t'},top[i]);
+    el('rect',{x:x-34,y:178,width:68,height:26,rx:4,fill:'#fff',stroke:'#000'});
+    el('text',{x:x,y:196,'text-anchor':'middle','class':'t'},bot[i]);
+  }
+  el('text',{x:740,y:150,'text-anchor':'end','class':'s'},'гребёнка 1×7');
+})();
+// Подсветка текущего раздела в оглавлении
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.toc a')),map={};
+  links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){links.forEach(function(a){a.classList.remove('act')});var a=map[e.target.id];if(a)a.classList.add('act');}});},{rootMargin:'-20% 0px -70% 0px'});
+  document.querySelectorAll('main section').forEach(function(s){io.observe(s)});
+})();
+</script>
+</body>
+</html>

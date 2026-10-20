@@ -184,6 +184,6 @@ fetch('ota/manifest.json', { cache: 'no-cache' }).then(r => r.json())
   .then(m => { document.getElementById('fw-ver').textContent = m.version; })
   .catch(() => {});
 
-// #modal=fw|flash|models|docs — открыть страницу сразу с модалкой (ссылка на документацию и т.п.)
+// #modal=fw|flash|models — открыть страницу сразу с модалкой (ссылка на документацию и т.п.)
 const m = new URLSearchParams(location.hash.slice(1)).get('modal');
 if (m) document.getElementById('modal-' + m)?.classList.add('show');

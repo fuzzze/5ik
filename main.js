@@ -67,12 +67,12 @@ let screenTex = null;
 // #explode, #lang=de, #explode&lang=de — параметры в hash (query до артефакта не доходит)
 const hash = new URLSearchParams(location.hash.slice(1));
 const HINT = {
-  ru: 'тяните — вращать · колесо или два пальца — разобрать и собрать · клик по макушке — следующий экран',
-  en: 'drag to rotate · scroll or two fingers to take apart · click the top for the next screen',
-  de: 'ziehen — drehen · Mausrad oder zwei Finger — zerlegen · Klick oben — nächster Bildschirm',
-  fr: 'glisser — tourner · molette ou deux doigts — démonter · clic sur le dessus — écran suivant',
-  es: 'arrastra para girar · rueda o dos dedos para desmontar · clic arriba — siguiente pantalla',
-  pt: 'arraste para girar · roda ou dois dedos para desmontar · clique no topo — próxima tela',
+  ru: 'тяните — вращать · колесо или два пальца — разобрать и собрать · клик по макушке — следующий экран, 2× — звук, 3× — поворот',
+  en: 'drag to rotate · scroll or two fingers to take apart · click the top for the next screen, 2× — sound, 3× — rotate',
+  de: 'ziehen — drehen · Mausrad oder zwei Finger — zerlegen · Klick oben — nächster Bildschirm, 2× — Ton, 3× — drehen',
+  fr: 'glisser — tourner · molette ou deux doigts — démonter · clic sur le dessus — écran suivant, 2× — son, 3× — rotation',
+  es: 'arrastra para girar · rueda o dos dedos para desmontar · clic arriba — siguiente pantalla, 2× — sonido, 3× — girar',
+  pt: 'arraste para girar · roda ou dois dedos para desmontar · clique no topo — próxima tela, 2× — som, 3× — girar',
 };
 function setLang(l) {
   if (!LANGS.includes(l)) l = 'en';
@@ -181,10 +181,43 @@ renderer.domElement.addEventListener('pointerup', e => {
   if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;  // это было вращение
   down = null;
   if (!screen || !hitTop(e)) return;
-  screen.goto(screen.idx + 1, performance.now());
   pressT = performance.now() / 1000;
   hideHint();
+  bootClick();
 });
+
+// ─── кнопка Boot: клики как в loop() прошивки ───────────────────────────────
+// Короткие нажатия копятся, пока между ними < 400 мс; через 400 мс тишины:
+// 1× — следующий экран, 2× — вкл/выкл звуковых алертов, 3× — поворот на 90°.
+const CLICK_GAP = 400;
+let clicks = 0, clickTimer = 0;
+function bootClick() {
+  clicks++;
+  clearTimeout(clickTimer);
+  clickTimer = setTimeout(() => {
+    const now = performance.now();
+    if (clicks === 1) screen.goto(screen.idx + 1, now);
+    else if (clicks === 2) buzz(screen.toggleMute() ? 2700 : 3200, 80);
+    else { screen.rotate(); buzz(3200, 60); }
+    clicks = 0;
+  }, CLICK_GAP);
+}
+
+// buzz(freq, ms): ledcWriteTone — меандр 50% на пьезо-пищалке
+let audio = null;
+function buzz(freq, ms) {
+  try {
+    audio ??= new AudioContext();
+    const t0 = audio.currentTime, osc = audio.createOscillator(), gain = audio.createGain();
+    osc.type = 'square';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.06, t0);
+    gain.gain.setValueAtTime(0, t0 + ms / 1000);
+    osc.connect(gain).connect(audio.destination);
+    osc.start(t0);
+    osc.stop(t0 + ms / 1000 + 0.02);
+  } catch { /* без звука — не страшно */ }
+}
 renderer.domElement.addEventListener('pointermove', e => {
   if (e.buttons) return;
   renderer.domElement.style.cursor = screen && hitTop(e) ? 'pointer' : '';

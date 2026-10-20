@@ -13,6 +13,9 @@ const GRAY = '#616161';
 const STAR_COUNT = 40, STAR_TICK = 80;   // star_timer_cb
 const FX_ENV = [0, 0.4, 0.9, 1.5, 0.9, 0.4], FX_FRAME = 66;   // FX_ANIM_ENV, кадр fx_anim_cb
 const FONT = 'BlinMontserrat';
+// Хулиганский режим (hooligan_timer_cb): каомодзи вместо числа, кадр 400 мс.
+// На устройстве — раз в 20–40 мин, в демке — раз в минуту.
+const KAOMOJI = ['O_o', 'o_O', 'O_o', 'O_o', '>_<'], KAO_FRAME = 400, HOOLIGAN_EVERY = 60000;
 
 // Названия экранов на устройстве задаёт пользователь, прошивка их не переводит —
 // для демки у каждого экрана свой ключ и переводы на 6 языков, как у админки.
@@ -36,9 +39,18 @@ export class BlinScreen {
     this.d = data;
     this.c = data.colors;
     this.icons = iconsImg;
+    // buf — кадр в координатах LVGL (с эффектами), canvas — что видно на панели
+    // после tft.setRotation (поворот тройным кликом)
+    this.buf = document.createElement('canvas');
+    this.buf.width = this.buf.height = W * SS;
+    this.ctx = this.buf.getContext('2d', { willReadFrequently: true });
     this.canvas = document.createElement('canvas');
     this.canvas.width = this.canvas.height = W * SS;
-    this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
+    this.out = this.canvas.getContext('2d');
+    this.rot = 0;            // g_rotation: 0..3, по 90° по часовой
+    this.muted = false;      // g_snd_muted
+    this.hoolStart = -1e9;   // начало хулиганского режима
+    this.hoolNext = null;    // когда следующий
     this.idx = data.main;
     this.lang = 'ru';
     this.fxStart = -1e9;
@@ -61,11 +73,38 @@ export class BlinScreen {
 
   get count() { return this.d.screens.length; }
 
+  // fx_apply_all(): глитч с новым случайным рисунком
+  glitch(now) {
+    this.fxStart = now;
+    this.fxSeed = (this.fxSeed * 7919 + 13) >>> 0;
+  }
+
   // ui_goto_screen(): новый экран + глитч + качание нижней панели
   goto(i, now) {
     this.idx = i % this.count;
-    this.fxStart = this.swingStart = now;
-    this.fxSeed = (this.fxSeed * 7919 + 13) >>> 0;
+    this.swingStart = now;
+    this.glitch(now);
+  }
+
+  // двойной клик: g_snd_muted = !g_snd_muted → колокольчик серый/белый
+  toggleMute() { this.muted = !this.muted; return this.muted; }
+
+  // тройной клик: g_rotation = (g_rotation + 1) & 3
+  rotate() { this.rot = (this.rot + 1) & 3; }
+
+  // каомодзи текущего кадра хулиганского режима или null; старт и финиш — с глитчем
+  kaomoji(now) {
+    if (this.hoolNext === null) this.hoolNext = now + HOOLIGAN_EVERY;
+    if (now >= this.hoolNext && now - this.hoolStart >= KAOMOJI.length * KAO_FRAME) {
+      this.hoolStart = now;
+      this.hoolDone = false;
+      this.hoolNext = now + HOOLIGAN_EVERY;
+      this.glitch(now);
+    }
+    const k = Math.floor((now - this.hoolStart) / KAO_FRAME);
+    if (k < KAOMOJI.length) return KAOMOJI[k];
+    if (!this.hoolDone) { this.hoolDone = true; if (this.hoolStart > 0) this.glitch(now); }
+    return null;
   }
 
   zone(s, t) {
@@ -89,6 +128,12 @@ export class BlinScreen {
     this.drawDots(g);
     this.drawPanel(g, now);
     this.drawFx(now);
+    // tft.setRotation: панель выводит тот же кадр, повёрнутый на rot × 90° по часовой
+    const o = this.out, N = W * SS;
+    o.setTransform(1, 0, 0, 1, 0, 0);
+    o.translate(N / 2, N / 2);
+    o.rotate(this.rot * Math.PI / 2);
+    o.drawImage(this.buf, -N / 2, -N / 2);
   }
 
   drawStars(g, now) {
@@ -173,7 +218,8 @@ export class BlinScreen {
   }
 
   drawIcons(g, s) {
-    const bell = this.d.screens.some(x => x.snd_lo != null || x.snd_hi != null) ? this.c.fg : GRAY;
+    // ui_update_bell(): белый, если звук не выключен и хоть у одного экрана есть порог
+    const bell = !this.muted && this.d.screens.some(x => x.snd_lo != null || x.snd_hi != null) ? this.c.fg : GRAY;
     const extra = s.extra && s.extra !== 'none' ? s.extra : null;
     if (extra) {   // ui_update_icons_layout(): 3 иконки с x=78 или 2 с x=94
       this.icon(g, extra.startsWith('cooler') ? 2 : 3, 78, 41, extra.endsWith('_on') ? this.c.fg : GRAY);
@@ -198,7 +244,7 @@ export class BlinScreen {
     const vals = s.hist.filter((h, k) => h != null && !((s.gap >> k) & 1)).concat([s.temp]);
     const f1 = v => v.toFixed(1);
     // главное число: LV_ALIGN_CENTER, 0, -15 → середина строки на y=105
-    this.text(g, f1(s.temp), 64, 120, 105 - 39, 'center', this.c.fg);
+    this.text(g, this.kaomoji(now) ?? f1(s.temp), 64, 120, 105 - 39, 'center', this.c.fg);
     this.text(g, f1(Math.min(...vals)), 16, 16, 152, 'left', GRAY);
     this.text(g, f1(Math.max(...vals)), 16, 224, 152, 'right', GRAY);
     const label = LABELS[s.label]?.[this.lang] ?? s.label;

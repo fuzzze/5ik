@@ -8,8 +8,10 @@ const W = 240;
 const ARC_START = 168, ARC_SPAN = 204;   // lv_arc_set_bg_angles(168, 12)
 const ARC_R = 112, ARC_W = 12;
 const GRAY = '#616161';
-const STAR_COUNT = 40, STAR_TICK = 40;   // star_timer_cb: раз в 40 мс
-const FX_ENV = [0, 0.4, 0.9, 1.5, 0.9, 0.4], FX_FRAME = 33;   // FX_ANIM_ENV, кадр fx_anim_cb
+// Темп — вдвое медленнее таймеров прошивки (40 и 33 мс): так выглядит на живом
+// устройстве (реальная частота кадров панели ниже номинала таймеров).
+const STAR_COUNT = 40, STAR_TICK = 80;   // star_timer_cb
+const FX_ENV = [0, 0.4, 0.9, 1.5, 0.9, 0.4], FX_FRAME = 66;   // FX_ANIM_ENV, кадр fx_anim_cb
 const FONT = 'BlinMontserrat';
 
 // Названия экранов на устройстве задаёт пользователь, прошивка их не переводит —

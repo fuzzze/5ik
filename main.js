@@ -6,7 +6,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { BlinScreen, LANGS, loadFont } from './screen.js';
-import { buildProps, setResolution } from './props.js';
+import { buildProps, setResolution, updateProps } from './props.js';
+import { Hints } from './hints.js';
 
 const CENTER = new THREE.Vector3(0, -7, -8);   // середина собранного устройства
 const TOP_Y = 4;          // клик выше этой отметки (мм от центра экрана) — «макушка»
@@ -32,6 +33,7 @@ scene.environmentIntensity = 0.7;
 
 const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 1, 5000);
 camera.position.set(110, 70, 190);
+if (new URLSearchParams(location.hash.slice(1)).has('front')) camera.position.set(0, 0, 220);   // #front — строго спереди
 
 const key = new THREE.DirectionalLight(0xffffff, 1.6);
 key.position.set(80, 160, 120);
@@ -81,9 +83,53 @@ function setLang(l) {
   if (screen) screen.lang = l;
   document.documentElement.lang = l;
   document.getElementById('hint').textContent = HINT[l];
+  hints.setLang(l);
   for (const b of document.querySelectorAll('#lang button')) b.setAttribute('aria-pressed', b.dataset.lang === l);
   lang = l;
 }
+// ─── подсказки ──────────────────────────────────────────────────────────────
+// Собрано, под углом — одна на макушке (как жать кнопку). Строго спереди — пять
+// к информации на экране. Полностью разобрано — по одной на каждую из 5 деталей.
+// Точки — в мм модели; у экранных — пиксели экрана 240×240 (координаты ui_init()).
+const hints = new Hints(document.getElementById('hints'));
+let modelRoot = null;
+const hintV = new THREE.Vector3();
+const AA = 32.4 / 240;       // мм на пиксель экрана (DISP_AA_D / 240)
+function modelPoint(x, y, z, group) {
+  hintV.set(x, y, z + (group ? explodeOffset(group, t) : 0));
+  return modelRoot.localToWorld(hintV);
+}
+function screenPoint(px, py) {
+  // картинка повёрнута вместе с экраном (tft.setRotation) — на rot × 90° по часовой
+  const a = -(screen?.rot ?? 0) * Math.PI / 2;
+  const x = (px - 120) * AA, y = -(py - 120) * AA;
+  return modelPoint(x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a), 1.6, 'display');
+}
+// кружки — у края элемента, чтобы не закрывать саму информацию
+const SCREEN_HINTS = { temp: [182, 76], min: [36, 141], max: [204, 141], icons: [176, 51], chart: [176, 157] };
+const PART_HINTS = {
+  front:   [-13.4, 13.4, 2.8, 'front'],    // ободок панели
+  display: [0, 9, 1.6, 'display'],
+  s2:      [-1, -12, -5.5, 's2'],
+  buzzer:  [1.3, -22.2, -12, 'buzzer'],
+  back:    [0, 21.3, -10, 'back'],         // верх арки задней части
+};
+hints.add('top', () => modelPoint(0, 21.3, -6));
+for (const [id, [px, py]] of Object.entries(SCREEN_HINTS)) hints.add(id, () => screenPoint(px, py));
+for (const [id, [x, y, z, g]] of Object.entries(PART_HINTS)) hints.add(id, () => modelPoint(x, y, z, g));
+
+const FRONTAL = Math.cos(THREE.MathUtils.degToRad(8));   // «строго спереди» — в пределах 8°
+const camDir = new THREE.Vector3();
+function updateHints() {
+  if (!modelRoot) return;
+  const show = new Set();
+  const assembled = t < 0.02 && tTarget < 0.02, exploded = t > 0.97;
+  const frontal = camDir.subVectors(camera.position, controls.target).normalize().z > FRONTAL;
+  if (assembled) (frontal ? Object.keys(SCREEN_HINTS) : ['top']).forEach(id => show.add(id));
+  if (exploded) Object.keys(PART_HINTS).forEach(id => show.add(id));
+  hints.update(camera, show);
+}
+
 let lang = hash.get('lang') || (navigator.language || 'en').slice(0, 2);
 const langBar = document.getElementById('lang');
 for (const l of LANGS) {
@@ -117,7 +163,7 @@ Promise.all([
   loadScreen(),
 ]).then(([ex, gltf]) => {
   explode = ex;
-  const root = gltf.scene;
+  const root = modelRoot = gltf.scene;
   root.position.copy(CENTER).negate().sub(press.position);   // в системе press
   press.add(root);
   root.traverse(o => {
@@ -274,6 +320,7 @@ props.forEach(p => { p.visible = false; propsRoot.add(p); });
 device.add(propsRoot);
 setResolution(innerWidth, innerHeight);
 const PROP_OUT = 0.25, PROP_IN = 0.45;   // с
+const camLocal = new THREE.Vector3();
 let propCur = 0, propInAt = -1e9;
 const propOutAt = props.map(() => -1e9);
 function showProp(r, now) {
@@ -286,7 +333,9 @@ function fadeProps(now, e) {
     const a = (i === propCur ? THREE.MathUtils.clamp((now - propInAt) / PROP_IN, 0, 1)
                              : 1 - THREE.MathUtils.clamp((now - propOutAt[i]) / PROP_OUT, 0, 1)) * (1 - e);
     p.visible = a > 0.01;
-    if (p.visible) p.traverse(o => { if (o.material) o.material.opacity = a; });
+    if (!p.visible) return;
+    p.traverse(o => { if (o.material) o.material.opacity = a; });
+    updateProps(p, propsRoot.worldToLocal(camLocal.copy(camera.position)));
   });
 }
 
@@ -316,7 +365,6 @@ function frame() {
   // в разобранном виде середина смещается назад — держим её в центре кадра
   device.position.z = 19 * e;
   device.rotation.z = turnAngle(now);
-  fadeProps(now, e);
   // нажатие: корпус наклоняется вперёд вокруг шарниров (только в собранном виде)
   press.rotation.x = pressAngle(now) * (1 - e);
   // отъезжаем камерой, чтобы разлёт помещался в кадр
@@ -324,6 +372,9 @@ function frame() {
   const dist = THREE.MathUtils.lerp(165, 300, e) * Math.max(1, 1 / camera.aspect) ** 0.9;
   camera.position.sub(controls.target).setLength(dist).add(controls.target);
   controls.update();
+  scene.updateMatrixWorld();
+  fadeProps(now, e);
+  updateHints();
   if (screen) {
     screen.draw(performance.now());
     screenTex.needsUpdate = true;

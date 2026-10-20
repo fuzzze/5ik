@@ -104,7 +104,10 @@ export class Hints {
       const p = this.v.copy(it.pos()).project(camera);
       const x = (p.x + 1) / 2 * W, y = (1 - p.y) / 2 * H;
       it.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
-      it.el.classList.toggle('left', x > W - 280);
+      // плашка — над кружком по центру, но не заходит за края окна (отступ 16)
+      const half = it.label.offsetWidth / 2, m = 16;
+      const dx = Math.max(0, m + half - x) - Math.max(0, x + half - (W - m));
+      it.label.style.setProperty('--dx', `${dx.toFixed(1)}px`);
     }
   }
 }

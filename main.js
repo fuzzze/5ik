@@ -16,7 +16,7 @@ const PRESS_DEG = 3.4;    // наклон корпуса при нажатии �
 const PIVOT = new THREE.Vector3(0, -33.1, -14);  // ось шарниров клавиши
 
 // ─── сцена ──────────────────────────────────────────────────────────────────
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });   // фон — CSS страницы
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -26,7 +26,6 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xffffff);
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 scene.environmentIntensity = 0.7;
@@ -320,7 +319,6 @@ props.forEach(p => { p.visible = false; propsRoot.add(p); });
 device.add(propsRoot);
 setResolution(innerWidth, innerHeight);
 const PROP_OUT = 0.25, PROP_IN = 0.45;   // с
-const camLocal = new THREE.Vector3();
 let propCur = 0, propInAt = -1e9;
 const propOutAt = props.map(() => -1e9);
 function showProp(r, now) {
@@ -335,7 +333,7 @@ function fadeProps(now, e) {
     p.visible = a > 0.01;
     if (!p.visible) return;
     p.traverse(o => { if (o.material) o.material.opacity = a; });
-    updateProps(p, propsRoot.worldToLocal(camLocal.copy(camera.position)));
+    updateProps(p, camera.position);
   });
 }
 

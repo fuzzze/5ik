@@ -74,12 +74,13 @@ function roundRect(center, u, v, w, h, r) {
 }
 
 // ─── «лофт» вдоль X: сечения {x, w, h, r} с центром в (cy, cz) ───────────────
-// Контур — у сечений из edges; у почти острых углов (r < 1.5) — линии по углам,
+// Сечение может нести dz — сдвиг центра по Z. Контур — у сечений из edges; у почти острых углов (r < 1.5) — линии по углам,
 // у скруглённых — силуэт по точке зрения.
 function loft(stations, { cy = PORT.y, cz = PORT.z, edges = [0, stations.length - 1] } = {}) {
   const g = new THREE.Group();
   const prof = stations.map(s => profile(s.w, s.h, s.r));
-  const P = (i, k) => new THREE.Vector3(stations[i].x, cy + prof[i][k].u, cz + prof[i][k].v);
+  const zc = i => cz + (stations[i].dz ?? 0);    // dz — сдвиг сечения по Z (несимметричное сужение)
+  const P = (i, k) => new THREE.Vector3(stations[i].x, cy + prof[i][k].u, zc(i) + prof[i][k].v);
   const n = prof[0].length;
 
   // пробка: боковины + торцы
@@ -92,7 +93,7 @@ function loft(stations, { cy = PORT.y, cz = PORT.z, edges = [0, stations.length 
     }
   for (const i of [0, stations.length - 1]) {
     const c = pos.length / 3;
-    pos.push(stations[i].x, cy, cz);
+    pos.push(stations[i].x, cy, zc(i));
     for (let k = 0; k < n; k++) idx.push(c, i * n + k, i * n + (k + 1) % n);
   }
   const geo = new THREE.BufferGeometry();
@@ -115,7 +116,7 @@ function loft(stations, { cy = PORT.y, cz = PORT.z, edges = [0, stations.length 
   g.userData.update = cam => {
     const out = [[], []];
     stations.forEach((s, i) => {
-      const f = k => prof[i][k].nu * (cam.y - cy - prof[i][k].u) + prof[i][k].nv * (cam.z - cz - prof[i][k].v);
+      const f = k => prof[i][k].nu * (cam.y - cy - prof[i][k].u) + prof[i][k].nv * (cam.z - zc(i) - prof[i][k].v);
       for (let k = 0; k < n; k++) {
         const a = f(k), b = f((k + 1) % n);
         if ((a > 0) !== (b > 0)) out[a > 0 ? 0 : 1][i] = P(i, k).lerp(P(i, (k + 1) % n), a / (a - b));
@@ -184,6 +185,25 @@ function cableUp() {          // на боку: гнездо смотрит вв
 function cableSide() {        // вверх дном: кабель выходит вбок и изгибается вверх (−Y модели)
   const g = plug();
   g.add(tube(new THREE.CatmullRomCurve3([at(43.5), at(58), at(70, -7), at(77, -24), at(80, -60), at(82, -240)]), 1.8));
+  g.add(clothespin(50));
+  return g;
+}
+
+// прищепка, зажавшая кабель сразу за штекером: две планки 72 × 10 × 6.5 обнимают
+// кабель спереди и сзади, губки — у кабеля, пружина посередине. Строится вдоль X
+// своей системы (0 — губки) и поворачивается вверх по миру (−Y модели).
+function clothespin(x) {
+  const g = new THREE.Group();
+  const gap = 1.8;                                  // радиус кабеля: губки сжимают его
+  for (const s of [-1, 1]) {
+    // внутренняя грань губки — у кабеля, наружная сужается к кончику
+    const st = (x, h) => ({ x, w: 10, h, r: 0.6, dz: s * (gap + h / 2) });
+    g.add(loft([st(0, 3.6), st(10, 6.5), st(72, 6.5)], { cy: 0, cz: 0, edges: [0, 1, 2] }));
+  }
+  for (const px of [33, 38])                        // пружина — бандаж вокруг обеих планок
+    g.add(roundRect(new THREE.Vector3(px, 0, 0), Y, Z, 11, 2 * (gap + 6.5) + 1, 1.2));
+  g.position.set(x, PORT.y + 4, PORT.z);            // губки — на 4 мм ниже кабеля (по миру)
+  g.rotation.z = -Math.PI / 2;                      // своя X → −Y модели (вверх по миру)
   return g;
 }
 
@@ -208,7 +228,8 @@ export function buildProps() {
   return [surface(), cableUp(), cableSide(), powerBank()];
 }
 
-// пересчитать силуэты реквизита; cam — положение камеры в системе модели
+// пересчитать силуэты реквизита; cam — положение камеры в мире
+const camL = new THREE.Vector3();
 export function updateProps(prop, cam) {
-  prop.traverse(o => o.userData.update?.(cam));
+  prop.traverse(o => { if (o.userData.update) o.userData.update(o.worldToLocal(camL.copy(cam))); });
 }

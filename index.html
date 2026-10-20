@@ -46,6 +46,17 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 .modal-body{font-size:14px;color:#555;margin-bottom:20px}
 .modal-btns{display:flex;flex-direction:column;gap:10px}
 .modal-box .btn-save,.modal-box .btn-outline,.modal-box .btn-del,.modal-box a.btn-outline,.modal-box a.btn-save{width:100%;display:block;text-align:center}
+/* прошивка по USB — поля, чекбокс и прогресс из админки (html.h) как есть */
+.fi-lbl{display:block;font-size:14px;color:#000;margin-bottom:4px;margin-top:16px}
+.fi-lbl:first-child{margin-top:0}
+.rl{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:#000;margin-top:10px}
+.rl input[type=checkbox],.rl input[type=radio]{-webkit-appearance:none;appearance:none;width:18px;height:18px;flex-shrink:0;background:#fff;border:1px solid #000;margin:0;cursor:pointer;position:relative}
+.rl input[type=checkbox]{border-radius:4px}
+.rl input[type=checkbox]:checked::after{content:'';position:absolute;left:5px;top:1px;width:5px;height:10px;border:solid #000;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.gap12{margin-top:12px}
+.prog-bar{background:#ddd;height:4px;margin:8px 0}
+.prog-fill{height:4px;background:#000;width:0%;transition:width .3s}
+.ota-msg{font-size:12px;color:#555;margin:4px 0;min-height:1.2em}
 @media (max-width:1280px){
   .page-hdr{padding:14px 16px 14px;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
   .hdr-blin{height:22px}
@@ -124,7 +135,20 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 <div class="modal-box mw-md">
 <div class="modal-head"><div class="sec-sub" data-t="fw">Скачать прошивку</div><button class="modal-x" onclick="closeModal('modal-fw')">&times;</button></div>
 <div class="modal-body"><p><span data-t="fw_ver">Последняя версия:</span> <b id="fw-ver">—</b></p><p data-t="fw_note"></p></div>
-<div class="modal-btns"><a class="btn-save" href="ota/firmware_signed.bin" download="blin_firmware.bin" data-t="fw_dl">Скачать firmware.bin</a></div>
+<div class="modal-btns"><a class="btn-save" href="ota/firmware_signed.bin" download="blin_firmware.bin" data-t="fw_dl">Скачать firmware.bin</a>
+<button class="btn-outline" onclick="closeModal('modal-fw');openModal('modal-flash')" data-t="fl_open">Прошить новое устройство по USB</button></div>
+</div>
+</div>
+<div class="modal" id="modal-flash" onclick="if(event.target===this&&!document.body.classList.contains('flashing'))this.classList.remove('show')">
+<div class="modal-box mw-md">
+<div class="modal-head"><div class="sec-sub" data-t="fl">Прошивка по USB</div><button class="modal-x" id="fl-x" onclick="closeModal('modal-flash')">&times;</button></div>
+<div class="modal-body"><p data-t="fl_note"></p><p data-t="fl_steps"></p></div>
+<label class="fi-lbl" for="fl-ver" data-t="fl_ver">Версия</label>
+<select class="fi" id="fl-ver"></select>
+<label class="rl"><input type="checkbox" id="fl-erase" checked> <span data-t="fl_erase"></span></label>
+<div id="fl-prog" style="display:none"><div class="prog-bar"><div id="fl-bar" class="prog-fill"></div></div></div>
+<div id="fl-msg" class="ota-msg"></div>
+<div class="gap12 modal-btns"><button class="btn-save" id="fl-go" data-t="fl_go">Подключить и прошить</button></div>
 </div>
 </div>
 <div class="modal" id="modal-models" onclick="if(event.target===this)this.classList.remove('show')">

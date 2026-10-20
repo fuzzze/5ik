@@ -1,0 +1,57 @@
+{
+ "chip": "ESP32-S2",
+ "versions": [
+  {
+   "version": "1.7.22",
+   "date": "2026-10-21",
+   "files": [
+    {
+     "name": "bootloader.bin",
+     "offset": 4096,
+     "size": 13792
+    },
+    {
+     "name": "partitions.bin",
+     "offset": 32768,
+     "size": 3072
+    },
+    {
+     "name": "boot_app0.bin",
+     "offset": 61440,
+     "size": 8192
+    },
+    {
+     "name": "firmware.bin",
+     "offset": 131072,
+     "size": 1544768
+    }
+   ]
+  },
+  {
+   "version": "1.7.21",
+   "date": "2026-10-09",
+   "files": [
+    {
+     "name": "bootloader.bin",
+     "offset": 4096,
+     "size": 13792
+    },
+    {
+     "name": "partitions.bin",
+     "offset": 32768,
+     "size": 3072
+    },
+    {
+     "name": "boot_app0.bin",
+     "offset": 61440,
+     "size": 8192
+    },
+    {
+     "name": "firmware.bin",
+     "offset": 131072,
+     "size": 1544160
+    }
+   ]
+  }
+ ]
+}

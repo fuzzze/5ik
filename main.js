@@ -9,6 +9,7 @@ import { BlinScreen, LANGS, loadFont } from './screen.js';
 import { buildProps, setResolution, updateProps } from './props.js';
 import { Hints } from './hints.js';
 import { applySiteLang, LANG_NAMES } from './site.js';
+import './flash.js';
 
 const CENTER = new THREE.Vector3(0, -7, -8);   // середина собранного устройства
 const TOP_Y = 4;          // клик выше этой отметки (мм от центра экрана) — «макушка»

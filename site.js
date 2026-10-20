@@ -2,6 +2,24 @@
 // версия прошивки из ota/manifest.json (тот же, что читают устройства).
 export const SITE_TEXT = {
   ru: {
+    fl_open: 'Прошить новое устройство по USB',
+    fl: 'Прошивка по USB',
+    fl_ver: 'Версия',
+    fl_latest: 'последняя',
+    fl_go: 'Подключить и прошить',
+    fl_note: 'Для новой платы Lolin S2 Mini: запишет загрузчик, таблицу разделов и прошивку. Нужен Chrome или Edge на компьютере.',
+    fl_steps: 'Подключите плату кабелем. Зажмите кнопку 0, нажмите и отпустите RST, затем отпустите 0 — плата перейдёт в режим загрузки. Нажмите «Подключить и прошить» и выберите порт.',
+    fl_erase: 'Стереть плату целиком (настройки и Wi-Fi пропадут)',
+    fl_nosupport: 'Этот браузер не умеет работать с USB-портом. Откройте страницу в Chrome или Edge на компьютере.',
+    fl_nolist: 'Не удалось загрузить список версий.',
+    st_noport: 'Порт не выбран.',
+    st_load: 'Загружаю файлы прошивки…',
+    st_conn: 'Подключаюсь к плате…',
+    st_wrongchip: 'Это не ESP32-S2 ({chip}) — прошивка не подходит.',
+    st_erase: 'Стираю плату — до минуты…',
+    st_write: 'Записываю… {p}%',
+    st_done: 'Готово. Если экран не включился — нажмите RST. Устройство поднимет точку доступа blin_XXXXXX: подключитесь к ней и настройте Wi-Fi (QR-код — на экране).',
+    st_fail: 'Не получилось: {e}. Проверьте, что плата в режиме загрузки (0 + RST), и попробуйте ещё раз.',
     fw: 'Скачать прошивку', models: 'Модели корпуса', docs: 'Документация',
     fw_ver: 'Последняя версия:', fw_dl: 'Скачать firmware.bin',
     fw_note: 'Установка: админка устройства → «Обновление прошивки» → «Загрузить файл прошивки .bin». С включённым автообновлением устройство поставит её само.',
@@ -11,6 +29,24 @@ export const SITE_TEXT = {
     loading: 'загрузка…',
   },
   en: {
+    fl_open: 'Flash a new device over USB',
+    fl: 'Flash over USB',
+    fl_ver: 'Version',
+    fl_latest: 'latest',
+    fl_go: 'Connect and flash',
+    fl_note: 'For a new Lolin S2 Mini board: writes the bootloader, the partition table and the firmware. Needs Chrome or Edge on a computer.',
+    fl_steps: 'Connect the board with a cable. Hold button 0, press and release RST, then release 0 — the board enters download mode. Click “Connect and flash” and pick the port.',
+    fl_erase: 'Erase the whole board (settings and Wi-Fi will be lost)',
+    fl_nosupport: 'This browser can’t talk to USB ports. Open the page in Chrome or Edge on a computer.',
+    fl_nolist: 'Couldn’t load the list of versions.',
+    st_noport: 'No port selected.',
+    st_load: 'Downloading firmware files…',
+    st_conn: 'Connecting to the board…',
+    st_wrongchip: 'This is not an ESP32-S2 ({chip}) — the firmware doesn’t fit.',
+    st_erase: 'Erasing the board — up to a minute…',
+    st_write: 'Writing… {p}%',
+    st_done: 'Done. If the screen stays dark, press RST. The device starts a blin_XXXXXX access point: connect to it and set up Wi-Fi (QR code on the screen).',
+    st_fail: 'Failed: {e}. Make sure the board is in download mode (0 + RST) and try again.',
     fw: 'Download firmware', models: 'Enclosure models', docs: 'Documentation',
     fw_ver: 'Latest version:', fw_dl: 'Download firmware.bin',
     fw_note: 'To install: device admin → “Firmware update” → “Upload firmware file .bin”. With auto-update on, the device installs it by itself.',
@@ -20,6 +56,24 @@ export const SITE_TEXT = {
     loading: 'loading…',
   },
   de: {
+    fl_open: 'Neues Gerät per USB flashen',
+    fl: 'Flashen per USB',
+    fl_ver: 'Version',
+    fl_latest: 'neueste',
+    fl_go: 'Verbinden und flashen',
+    fl_note: 'Für eine neue Lolin-S2-Mini-Platine: schreibt Bootloader, Partitionstabelle und Firmware. Benötigt Chrome oder Edge auf einem Computer.',
+    fl_steps: 'Platine per Kabel anschließen. Taste 0 gedrückt halten, RST drücken und loslassen, dann 0 loslassen — die Platine geht in den Download-Modus. „Verbinden und flashen“ klicken und den Port wählen.',
+    fl_erase: 'Platine komplett löschen (Einstellungen und WLAN gehen verloren)',
+    fl_nosupport: 'Dieser Browser kann nicht auf USB-Ports zugreifen. Seite in Chrome oder Edge auf einem Computer öffnen.',
+    fl_nolist: 'Versionsliste konnte nicht geladen werden.',
+    st_noport: 'Kein Port gewählt.',
+    st_load: 'Firmware-Dateien werden geladen…',
+    st_conn: 'Verbinde mit der Platine…',
+    st_wrongchip: 'Das ist kein ESP32-S2 ({chip}) — die Firmware passt nicht.',
+    st_erase: 'Platine wird gelöscht — bis zu einer Minute…',
+    st_write: 'Schreibe… {p} %',
+    st_done: 'Fertig. Bleibt der Bildschirm dunkel, RST drücken. Das Gerät startet den Zugangspunkt blin_XXXXXX: verbinden und WLAN einrichten (QR-Code auf dem Bildschirm).',
+    st_fail: 'Fehlgeschlagen: {e}. Prüfen, ob die Platine im Download-Modus ist (0 + RST), und erneut versuchen.',
     fw: 'Firmware herunterladen', models: 'Gehäusemodelle', docs: 'Dokumentation',
     fw_ver: 'Neueste Version:', fw_dl: 'firmware.bin herunterladen',
     fw_note: 'Installation: Geräte-Admin → „Firmware-Update“ → „Firmware-Datei .bin hochladen“. Mit Auto-Update installiert das Gerät sie selbst.',
@@ -29,6 +83,24 @@ export const SITE_TEXT = {
     loading: 'wird geladen…',
   },
   fr: {
+    fl_open: 'Flasher un nouvel appareil par USB',
+    fl: 'Flasher par USB',
+    fl_ver: 'Version',
+    fl_latest: 'dernière',
+    fl_go: 'Connecter et flasher',
+    fl_note: 'Pour une carte Lolin S2 Mini neuve : écrit le bootloader, la table des partitions et le firmware. Nécessite Chrome ou Edge sur un ordinateur.',
+    fl_steps: 'Branchez la carte. Maintenez le bouton 0, appuyez puis relâchez RST, puis relâchez 0 — la carte passe en mode téléchargement. Cliquez sur « Connecter et flasher » et choisissez le port.',
+    fl_erase: 'Effacer toute la carte (réglages et Wi-Fi seront perdus)',
+    fl_nosupport: 'Ce navigateur ne sait pas accéder aux ports USB. Ouvrez la page dans Chrome ou Edge sur un ordinateur.',
+    fl_nolist: 'Impossible de charger la liste des versions.',
+    st_noport: 'Aucun port choisi.',
+    st_load: 'Téléchargement des fichiers du firmware…',
+    st_conn: 'Connexion à la carte…',
+    st_wrongchip: 'Ce n’est pas un ESP32-S2 ({chip}) — le firmware ne convient pas.',
+    st_erase: 'Effacement de la carte — jusqu’à une minute…',
+    st_write: 'Écriture… {p} %',
+    st_done: 'Terminé. Si l’écran reste noir, appuyez sur RST. L’appareil crée le point d’accès blin_XXXXXX : connectez-vous et configurez le Wi-Fi (QR code à l’écran).',
+    st_fail: 'Échec : {e}. Vérifiez que la carte est en mode téléchargement (0 + RST) et réessayez.',
     fw: 'Télécharger le firmware', models: 'Modèles du boîtier', docs: 'Documentation',
     fw_ver: 'Dernière version :', fw_dl: 'Télécharger firmware.bin',
     fw_note: 'Installation : admin de l’appareil → « Mise à jour du firmware » → « Envoyer le fichier .bin ». Avec la mise à jour auto, l’appareil l’installe tout seul.',
@@ -38,6 +110,24 @@ export const SITE_TEXT = {
     loading: 'chargement…',
   },
   es: {
+    fl_open: 'Flashear un dispositivo nuevo por USB',
+    fl: 'Flashear por USB',
+    fl_ver: 'Versión',
+    fl_latest: 'última',
+    fl_go: 'Conectar y flashear',
+    fl_note: 'Para una placa Lolin S2 Mini nueva: escribe el bootloader, la tabla de particiones y el firmware. Necesita Chrome o Edge en un ordenador.',
+    fl_steps: 'Conecta la placa con un cable. Mantén el botón 0, pulsa y suelta RST y luego suelta 0: la placa entra en modo de descarga. Pulsa «Conectar y flashear» y elige el puerto.',
+    fl_erase: 'Borrar toda la placa (se perderán los ajustes y el Wi-Fi)',
+    fl_nosupport: 'Este navegador no puede acceder a puertos USB. Abre la página en Chrome o Edge en un ordenador.',
+    fl_nolist: 'No se pudo cargar la lista de versiones.',
+    st_noport: 'No se eligió ningún puerto.',
+    st_load: 'Descargando los archivos del firmware…',
+    st_conn: 'Conectando con la placa…',
+    st_wrongchip: 'Esto no es un ESP32-S2 ({chip}): el firmware no sirve.',
+    st_erase: 'Borrando la placa: hasta un minuto…',
+    st_write: 'Escribiendo… {p} %',
+    st_done: 'Listo. Si la pantalla sigue apagada, pulsa RST. El dispositivo crea el punto de acceso blin_XXXXXX: conéctate y configura el Wi-Fi (código QR en la pantalla).',
+    st_fail: 'Error: {e}. Comprueba que la placa está en modo de descarga (0 + RST) e inténtalo de nuevo.',
     fw: 'Descargar firmware', models: 'Modelos de la carcasa', docs: 'Documentación',
     fw_ver: 'Última versión:', fw_dl: 'Descargar firmware.bin',
     fw_note: 'Instalación: admin del dispositivo → «Actualización del firmware» → «Subir archivo .bin». Con la actualización automática, el dispositivo la instala solo.',
@@ -47,6 +137,24 @@ export const SITE_TEXT = {
     loading: 'cargando…',
   },
   pt: {
+    fl_open: 'Gravar um dispositivo novo por USB',
+    fl: 'Gravação por USB',
+    fl_ver: 'Versão',
+    fl_latest: 'mais recente',
+    fl_go: 'Conectar e gravar',
+    fl_note: 'Para uma placa Lolin S2 Mini nova: grava o bootloader, a tabela de partições e o firmware. Precisa do Chrome ou Edge num computador.',
+    fl_steps: 'Conecte a placa com um cabo. Segure o botão 0, aperte e solte RST e depois solte 0 — a placa entra no modo de download. Clique em «Conectar e gravar» e escolha a porta.',
+    fl_erase: 'Apagar a placa inteira (configurações e Wi-Fi serão perdidos)',
+    fl_nosupport: 'Este navegador não acessa portas USB. Abra a página no Chrome ou Edge num computador.',
+    fl_nolist: 'Não foi possível carregar a lista de versões.',
+    st_noport: 'Nenhuma porta escolhida.',
+    st_load: 'Baixando os arquivos do firmware…',
+    st_conn: 'Conectando à placa…',
+    st_wrongchip: 'Isto não é um ESP32-S2 ({chip}) — o firmware não serve.',
+    st_erase: 'Apagando a placa — até um minuto…',
+    st_write: 'Gravando… {p}%',
+    st_done: 'Pronto. Se a tela continuar apagada, aperte RST. O dispositivo cria o ponto de acesso blin_XXXXXX: conecte-se a ele e configure o Wi-Fi (código QR na tela).',
+    st_fail: 'Falhou: {e}. Verifique se a placa está no modo de download (0 + RST) e tente de novo.',
     fw: 'Baixar firmware', models: 'Modelos do gabinete', docs: 'Documentação',
     fw_ver: 'Última versão:', fw_dl: 'Baixar firmware.bin',
     fw_note: 'Instalação: admin do dispositivo → «Atualização de firmware» → «Enviar arquivo .bin». Com a atualização automática, o dispositivo a instala sozinho.',
@@ -60,17 +168,22 @@ export const SITE_TEXT = {
 // названия в списке — как в админке (admin_ext.h, блок «Локализация»)
 export const LANG_NAMES = { en: 'English', ru: 'Русский', de: 'Deutsch', fr: 'Français', es: 'Español', pt: 'Português' };
 
+let lang = 'en';
+export const siteLang = () => lang;
+
 export function applySiteLang(l) {
+  lang = l;
   const T = SITE_TEXT[l] || SITE_TEXT.en;
   for (const el of document.querySelectorAll('[data-t]')) el.textContent = T[el.dataset.t];
   const ld = document.getElementById('loading');
   if (ld && !ld.dataset.err) ld.textContent = T.loading;
+  document.dispatchEvent(new Event('blin-lang'));
 }
 
 fetch('ota/manifest.json', { cache: 'no-cache' }).then(r => r.json())
   .then(m => { document.getElementById('fw-ver').textContent = m.version; })
   .catch(() => {});
 
-// #modal=fw|models|docs — открыть страницу сразу с модалкой (ссылка на документацию и т.п.)
+// #modal=fw|flash|models|docs — открыть страницу сразу с модалкой (ссылка на документацию и т.п.)
 const m = new URLSearchParams(location.hash.slice(1)).get('modal');
 if (m) document.getElementById('modal-' + m)?.classList.add('show');

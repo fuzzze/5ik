@@ -5,9 +5,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { BlinScreen, LANGS, loadFont } from './screen.js';
 
-const SCREENS = ['screens/screen_0.png', 'screens/screen_1.png', 'screens/screen_2.png',
-                 'screens/screen_3.png', 'screens/screen_4.png'];
 const CENTER = new THREE.Vector3(0, -7, -8);   // середина собранного устройства
 const TOP_Y = 4;          // клик выше этой отметки (мм от центра экрана) — «макушка»
 const PRESS_DEG = 3.4;    // наклон корпуса при нажатии — как у кнопки-дна
@@ -62,42 +61,60 @@ scene.add(device);
 // ─── модель ─────────────────────────────────────────────────────────────────
 const parts = [];          // { obj, group, base }
 let explode = {};
-let screenMat = null;
-const screenTex = [];      // по индексу экрана; догружаются в фоне
-let screenIdx = 0;
+let screen = null;          // BlinScreen: живой экран на canvas
+let screenTex = null;
 
-// ImageBitmap — как текстуры внутри glTF: без переворота (UV в glTF идут сверху вниз)
-const bmpLoader = new THREE.ImageBitmapLoader().setOptions({ imageOrientation: 'none' });
-async function loadScreen(url, tries = 3) {
-  for (let i = 1; ; i++) {
-    try {
-      const t = new THREE.Texture(await bmpLoader.loadAsync(url));
-      t.flipY = false;
-      t.colorSpace = THREE.SRGBColorSpace;
-      t.anisotropy = 8;
-      t.needsUpdate = true;
-      return t;
-    } catch (e) {
-      if (i >= tries) throw e;
-      await new Promise(r => setTimeout(r, 300 * i));
-    }
-  }
+// #explode, #lang=de, #explode&lang=de — параметры в hash (query до артефакта не доходит)
+const hash = new URLSearchParams(location.hash.slice(1));
+const HINT = {
+  ru: 'тяните — вращать · колесо или два пальца — разобрать и собрать · клик по макушке — следующий экран',
+  en: 'drag to rotate · scroll or two fingers to take apart · click the top for the next screen',
+  de: 'ziehen — drehen · Mausrad oder zwei Finger — zerlegen · Klick oben — nächster Bildschirm',
+  fr: 'glisser — tourner · molette ou deux doigts — démonter · clic sur le dessus — écran suivant',
+  es: 'arrastra para girar · rueda o dos dedos para desmontar · clic arriba — siguiente pantalla',
+  pt: 'arraste para girar · roda ou dois dedos para desmontar · clique no topo — próxima tela',
+};
+function setLang(l) {
+  if (!LANGS.includes(l)) l = 'en';
+  if (screen) screen.lang = l;
+  document.documentElement.lang = l;
+  document.getElementById('hint').textContent = HINT[l];
+  for (const b of document.querySelectorAll('#lang button')) b.setAttribute('aria-pressed', b.dataset.lang === l);
+  lang = l;
+}
+let lang = hash.get('lang') || (navigator.language || 'en').slice(0, 2);
+const langBar = document.getElementById('lang');
+for (const l of LANGS) {
+  const b = document.createElement('button');
+  b.textContent = l.toUpperCase();
+  b.dataset.lang = l;
+  b.onclick = () => setLang(l);
+  langBar.appendChild(b);
+}
+setLang(lang);
+
+async function loadScreen() {
+  const icons = new Image();
+  icons.src = 'screen/icons.png';
+  const [data] = await Promise.all([
+    fetch('screen/screens.json').then(r => r.json()),
+    icons.decode(),
+    loadFont('screen/montserrat-sb.woff'),
+  ]);
+  screen = new BlinScreen(data, icons);
+  screen.lang = lang;
+  screenTex = new THREE.CanvasTexture(screen.canvas);
+  screenTex.flipY = false;                 // UV в glTF идут сверху вниз
+  screenTex.colorSpace = THREE.SRGBColorSpace;
+  screenTex.anisotropy = 8;
 }
 
-function showScreen(i) {
-  screenIdx = i;
-  screenMat.map = screenTex[i];
-  screenMat.needsUpdate = true;
-}
-
-// Сначала — модель и первый экран (сцена сразу видна), остальные экраны — потом, по одному.
 Promise.all([
   fetch('explode.json').then(r => r.json()),
   new GLTFLoader().loadAsync('blin.gltf.json'),
-  loadScreen(SCREENS[0]),
-]).then(([ex, gltf, first]) => {
+  loadScreen(),
+]).then(([ex, gltf]) => {
   explode = ex;
-  screenTex[0] = first;
   const root = gltf.scene;
   root.position.copy(CENTER).negate().sub(press.position);   // в системе press
   press.add(root);
@@ -109,18 +126,11 @@ Promise.all([
     parts.push({ obj: o, group, base: o.position.z });
     if (name === 'screen') {
       // экран светится сам: без освещения и тон-маппинга — цвета как на устройстве
-      screenMat = new THREE.MeshBasicMaterial({ toneMapped: false });
-      o.material = screenMat;
+      o.material = new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false });
       o.receiveShadow = false;
-      showScreen(0);
     }
   });
   document.getElementById('loading').remove();
-  (async () => {
-    for (let i = 1; i < SCREENS.length; i++) {
-      try { screenTex[i] = await loadScreen(SCREENS[i]); } catch { /* экран просто пропустится */ }
-    }
-  })();
 }).catch(err => {
   document.getElementById('loading').textContent =
     `не удалось загрузить сцену (${err.message}) — откройте через http-сервер, см. README`;
@@ -128,7 +138,7 @@ Promise.all([
 
 // ─── взрыв-схема: колесо и два пальца ───────────────────────────────────────
 // ?explode=1 или #explode — открыть сразу разобранным
-let tTarget = location.hash === '#explode' ? 1
+let tTarget = hash.has('explode') ? 1
   : THREE.MathUtils.clamp(+new URLSearchParams(location.search).get('explode') || 0, 0, 1);
 let t = tTarget;
 const hint = document.getElementById('hint');
@@ -169,16 +179,14 @@ renderer.domElement.addEventListener('pointerdown', e => { down = [e.clientX, e.
 renderer.domElement.addEventListener('pointerup', e => {
   if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;  // это было вращение
   down = null;
-  if (!screenMat || !hitTop(e)) return;
-  let next = screenIdx;
-  do next = (next + 1) % SCREENS.length; while (!screenTex[next] && next !== screenIdx);
-  showScreen(next);
+  if (!screen || !hitTop(e)) return;
+  screen.goto(screen.idx + 1, performance.now());
   pressT = performance.now() / 1000;
   hideHint();
 });
 renderer.domElement.addEventListener('pointermove', e => {
   if (e.buttons) return;
-  renderer.domElement.style.cursor = screenMat && hitTop(e) ? 'pointer' : '';
+  renderer.domElement.style.cursor = screen && hitTop(e) ? 'pointer' : '';
 });
 
 // ─── кадр ───────────────────────────────────────────────────────────────────
@@ -200,9 +208,14 @@ function frame() {
   // нажатие: корпус наклоняется вперёд вокруг шарниров (только в собранном виде)
   press.rotation.x = pressAngle(now) * (1 - e);
   // отъезжаем камерой, чтобы разлёт помещался в кадр
-  const dist = THREE.MathUtils.lerp(165, 300, e);
+  // на узком (вертикальном) экране — дальше, чтобы помещалось по ширине
+  const dist = THREE.MathUtils.lerp(165, 300, e) * Math.max(1, 1 / camera.aspect) ** 0.9;
   camera.position.sub(controls.target).setLength(dist).add(controls.target);
   controls.update();
+  if (screen) {
+    screen.draw(performance.now());
+    screenTex.needsUpdate = true;
+  }
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }

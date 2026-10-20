@@ -69,7 +69,6 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 .modal-box a.btn-save,.modal-box a.btn-outline{display:flex;align-items:center;justify-content:center;text-decoration:none}
 .modal-body p+p{margin-top:10px}
 #stage canvas{position:absolute;inset:0;display:block;touch-action:none}
-#hint{position:absolute;left:0;right:0;bottom:20px;text-align:center;font-size:12px;line-height:1.5;color:var(--mute);transition:opacity .8s;pointer-events:none;padding:0 16px;z-index:2}
 #loading{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;color:var(--mute)}
 #hints{z-index:3}
   /* подсказки: полупрозрачный белый кружок с прозрачным плюсом, наведение — плашка над ним */
@@ -87,7 +86,7 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
   .hint:hover button, .hint.open button { transform: scale(1.18); opacity: 1; }
   .hint-label {
     position: absolute; left: var(--dx, 0px); bottom: 14px; transform: translateX(-50%);
-    width: max-content; max-width: min(260px, calc(100% - 32px)); padding: 12px 16px;
+    width: max-content; max-width: min(260px, calc(100vw - 32px)); padding: 12px 16px;
     background: #fff; color: var(--ink); box-shadow: 0 2px 10px rgba(0, 0, 0, .07);
     font: 500 12px/1.5 var(--font);
     opacity: 0; pointer-events: none; transition: opacity .15s;
@@ -113,7 +112,6 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 <div class="card" id="stage">
 <div id="loading">загрузка…</div>
 <div id="hints"></div>
-<div id="hint"></div>
 </div>
 <footer class="ftr">
 <div class="ftr-tools">
@@ -134,9 +132,8 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 <div class="modal-head"><div class="sec-sub" data-t="models">Модели корпуса</div><button class="modal-x" onclick="closeModal('modal-models')">&times;</button></div>
 <div class="modal-body"><p data-t="models_note"></p><p data-t="models_screws"></p></div>
 <div class="modal-btns">
-<a class="btn-outline" href="models/front_panel.stl" download data-t="m_front">Передняя панель · STL</a>
-<a class="btn-outline" href="models/back_case.stl" download data-t="m_back">Задняя часть с кнопкой · STL</a>
-<a class="btn-outline" href="models/enclosure.step" download data-t="m_step">Сборка с электроникой · STEP</a>
+<a class="btn-save" href="models/front_panel.stl" download data-t="m_front">Передняя панель · STL</a>
+<a class="btn-save" href="models/back_case.stl" download data-t="m_back">Задняя часть с кнопкой · STL</a>
 </div>
 </div>
 </div>

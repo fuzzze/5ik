@@ -73,19 +73,10 @@ let screenTex = null;
 
 // #explode, #lang=de, #explode&lang=de — параметры в hash (query до артефакта не доходит)
 const hash = new URLSearchParams(location.hash.slice(1));
-const HINT = {
-  ru: 'тяните — вращать · колесо или два пальца — разобрать и собрать · клик по макушке или дну — следующий экран, 2× — звук, 3× — поворот',
-  en: 'drag to rotate · scroll or two fingers to take apart · click the top or bottom for the next screen, 2× — sound, 3× — rotate',
-  de: 'ziehen — drehen · Mausrad oder zwei Finger — zerlegen · Klick oben oder unten — nächster Bildschirm, 2× — Ton, 3× — drehen',
-  fr: 'glisser — tourner · molette ou deux doigts — démonter · clic dessus ou dessous — écran suivant, 2× — son, 3× — rotation',
-  es: 'arrastra para girar · rueda o dos dedos para desmontar · clic arriba o abajo — siguiente pantalla, 2× — sonido, 3× — girar',
-  pt: 'arraste para girar · roda ou dois dedos para desmontar · clique no topo ou na base — próxima tela, 2× — som, 3× — girar',
-};
 function setLang(l) {
   if (!LANGS.includes(l)) l = 'en';
   if (screen) screen.lang = l;
   document.documentElement.lang = l;
-  document.getElementById('hint').textContent = HINT[l];
   hints.setLang(l);
   applySiteLang(l);
   for (const b of langBar.children) b.setAttribute('aria-pressed', b.dataset.lang === l);
@@ -201,13 +192,26 @@ Promise.all([
 let tTarget = hash.has('explode') ? THREE.MathUtils.clamp(hash.get('explode') === '' ? 1 : +hash.get('explode') || 0, 0, 1)
   : THREE.MathUtils.clamp(+new URLSearchParams(location.search).get('explode') || 0, 0, 1);
 let t = tTarget;
-const hint = document.getElementById('hint');
-function hideHint() { hint.style.opacity = 0; }
+// ─── покачивание в начале: пока с моделью не взаимодействовали ───────────────
+// Камера плавно ходит вокруг устройства ±SWING по синусу; амплитуда нарастает
+// за первые секунды, чтобы старт был без рывка. Первое касание, клик, колесо —
+// и покачивание выключается насовсем (OrbitControls продолжают с того же места).
+const SWING = THREE.MathUtils.degToRad(14), SWING_PERIOD = 14, SWING_RAMP = 3;
+let idle = !hash.has('front'), swingPrev = 0, swingT0 = -1;
+function interacted() { idle = false; }
+function swing(now) {
+  if (!idle) return;
+  if (swingT0 < 0) swingT0 = now;
+  const s = now - swingT0;
+  const a = SWING * Math.sin(2 * Math.PI * s / SWING_PERIOD) * smooth(Math.min(1, s / SWING_RAMP));
+  camera.position.sub(controls.target).applyAxisAngle(THREE.Object3D.DEFAULT_UP, a - swingPrev).add(controls.target);
+  swingPrev = a;
+}
 
 stage.addEventListener('wheel', e => {
   e.preventDefault();
   tTarget = THREE.MathUtils.clamp(tTarget + e.deltaY * 0.0015, 0, 1);
-  hideHint();
+  interacted();
 }, { passive: false });
 
 let pinchY = null;
@@ -216,7 +220,7 @@ renderer.domElement.addEventListener('touchmove', e => {
   const y = (e.touches[0].clientY + e.touches[1].clientY) / 2;
   if (pinchY !== null) tTarget = THREE.MathUtils.clamp(tTarget + (pinchY - y) * 0.004, 0, 1);
   pinchY = y;
-  hideHint();
+  interacted();
 }, { passive: true });
 renderer.domElement.addEventListener('touchend', () => { pinchY = null; });
 
@@ -238,7 +242,7 @@ function hitTop(ev) {
   return y > TOP_Y || y < BOTTOM_Y;
 }
 
-renderer.domElement.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; interacted(); });
 renderer.domElement.addEventListener('pointerup', e => {
   if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;  // это было вращение
   down = null;
@@ -249,7 +253,7 @@ renderer.domElement.addEventListener('pointerup', e => {
 function pressTop() {
   if (!screen) return;
   pressT = performance.now() / 1000;
-  hideHint();
+  interacted();
   bootClick();
 }
 
@@ -382,6 +386,7 @@ function frame() {
   // на узком (вертикальном) экране — дальше, чтобы помещалось по ширине
   const dist = THREE.MathUtils.lerp(165, 300, e) * Math.max(1, 1 / camera.aspect) ** 0.9;
   camera.position.sub(controls.target).setLength(dist).add(controls.target);
+  swing(now);
   controls.update();
   scene.updateMatrixWorld();
   fadeProps(now, e);

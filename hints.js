@@ -98,8 +98,8 @@ export class Hints {
   }
 
   // show: множество id, которые видны сейчас
-  update(camera, show) {
-    const W = innerWidth, H = innerHeight;
+  // W, H — размер области сцены (карточки), в которой лежат маркеры
+  update(camera, show, W, H) {
     for (const [id, it] of this.items) {
       const on = show.has(id);
       it.el.classList.toggle('on', on);

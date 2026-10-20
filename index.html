@@ -3,33 +3,74 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Blin 3D</title>
+<title>BLIN</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* фон, зерно, внутренняя тень и шрифт — как у админки (src/web/html.h) */
-  :root { --bg: #e8e8e8; --ink: #000; --mute: #8e8e93; --font: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; overscroll-behavior: none;
-               font-family: var(--font); font-weight: 500; -webkit-font-smoothing: antialiased; }
-  canvas { display: block; touch-action: none; position: relative; z-index: 1; }   /* зерно — под моделью */
-  #grain, #vignette { position: fixed; inset: 0; pointer-events: none; }
-  #vignette, #hint, #lang, #hints, #loading { z-index: 2; }
-  #grain { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E"); }
-  #vignette { box-shadow: inset 0 0 40px rgba(0, 0, 0, .2); }
-  #hint {
-    position: fixed; left: 0; right: 0; bottom: 24px; text-align: center;
-    font: 500 12px/1.5 var(--font); color: var(--mute);
-    transition: opacity .8s; pointer-events: none; padding: 0 16px;
-  }
-  #lang { position: fixed; top: 16px; right: 16px; display: flex; gap: 2px; font: 500 12px/1 var(--font); }
-  #lang button {
-    font: inherit; letter-spacing: .04em; color: var(--mute); background: none; border: 0;
-    padding: 6px 7px; cursor: pointer;
-  }
-  #lang button:hover { color: var(--ink); }
-  #lang button[aria-pressed="true"] { color: var(--ink); background: #fff; font-weight: 700; }
+/* ── из админки (src/web/html.h, admin_ext.h) как есть ── */
+:root{--bg:#e8e8e8;--ink:#000;--white:#fff;--soft:#f2f2f7;--mid:#dcdcdc;--mute:#8e8e93;--ink-soft:#555;--c-normal:#00c853;--font:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:500;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100%}
+html{min-height:100vh;overflow-x:hidden}
+body{min-height:100vh;overflow-x:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,0.2)}
+html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+.page-hdr{display:grid;grid-template-columns:1fr auto 1fr;align-items:flex-end;padding:24px max(100px,calc((100% - 1720px)/2)) 25px}
+.hdr-icons{display:flex;align-items:center;gap:12px;justify-self:start}
+.hdr-time{text-align:center;font-size:32px;font-weight:600;line-height:1;white-space:nowrap}
+.hdr-blin{justify-self:end;height:28px;display:flex;align-items:flex-end}
+.hdr-blin svg{height:28px;width:99px;display:block;fill:var(--ink)}
+.card{position:relative;z-index:1;margin:0 max(100px,calc((100% - 1720px)/2));border:1px solid var(--ink);border-radius:4px;background:var(--bg);min-height:902px;display:flex;flex-direction:column;overflow:hidden}
+.sec-sub{font-size:24px;font-weight:500;display:flex;align-items:center;gap:16px;margin:28px 0 18px}
+.sec-sub::after{content:'';flex:1;height:1px;background:var(--ink)}
+.fi{display:block;width:100%;height:40px;padding:0 11px;background:#fff;border:1px solid #000;color:#000;font-size:14px;font-family:inherit;outline:none;-webkit-appearance:none;border-radius:4px}
+.fi:focus{outline:2px solid var(--c-normal);outline-offset:2px}
+.btn-save{height:40px;padding:0 16px;background:#000;color:#fff;border:1px solid #000;font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;border-radius:4px}
+.btn-save:hover{opacity:.85}
+.btn-outline{height:40px;padding:0 16px;background:var(--bg);color:#000;border:1px solid #000;font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;border-radius:4px}
+.btn-outline:hover{background:#dcdcdc}
+.btn-wide{width:100%;display:block;text-align:center}
+.ftr{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:24px;padding:25px max(100px,calc((100% - 1720px)/2)) 0;font-size:14px}
+.ftr-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;flex-shrink:0;width:420px}
+.ftr-tools .btn-outline{padding:6px 10px;height:auto;min-height:40px;white-space:normal;font-size:13px;line-height:1.2;text-align:center}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:100}
+.modal.show{display:flex}
+.modal-box{background:var(--bg);border:1px solid #000;border-radius:4px;padding:24px;width:320px;max-width:92vw;max-height:88vh;overflow-y:auto}
+.modal-box.mw-md{width:460px}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.modal-head .sec-sub{margin:0;font-size:20px}
+.modal-head .sec-sub::after{display:none}
+.modal-x{width:32px;height:32px;flex-shrink:0;border:0;background:transparent;border-radius:4px;font-size:18px;line-height:1;cursor:pointer;color:#000}
+.modal-x:hover{background:#dcdcdc}
+.modal-body{font-size:14px;color:#555;margin-bottom:20px}
+.modal-btns{display:flex;flex-direction:column;gap:10px}
+.modal-box .btn-save,.modal-box .btn-outline,.modal-box .btn-del,.modal-box a.btn-outline,.modal-box a.btn-save{width:100%;display:block;text-align:center}
+@media (max-width:1280px){
+  .page-hdr{padding:14px 16px 14px;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+  .hdr-blin{height:22px}
+  .hdr-blin svg{height:22px;width:auto}
+  .card{margin:0 12px;min-height:auto;border-radius:4px}
+  .ftr{flex-direction:column;align-items:stretch;gap:18px;padding:20px 16px 0}
+  .ftr-tools{width:auto;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+  .modal-box{padding:18px}
+}
+select.fi-chev{appearance:none;-webkit-appearance:none;-moz-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+
+/* ── демка ── */
+/* страница — на высоту окна: карточка-рамка занимает всё между шапкой и кнопками */
+.page{display:flex;flex-direction:column;height:100vh;height:100dvh;padding-bottom:40px}
+.card{flex:1;min-height:420px}
+.hdr-icons select{width:auto}
+.ftr-tools{grid-template-columns:repeat(3,minmax(0,1fr));width:630px}
+.modal-box a.btn-save,.modal-box a.btn-outline{display:flex;align-items:center;justify-content:center;text-decoration:none}
+.modal-body p+p{margin-top:10px}
+#stage canvas{position:absolute;inset:0;display:block;touch-action:none}
+#hint{position:absolute;left:0;right:0;bottom:20px;text-align:center;font-size:12px;line-height:1.5;color:var(--mute);transition:opacity .8s;pointer-events:none;padding:0 16px;z-index:2}
+#loading{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;color:var(--mute)}
+#hints{z-index:3}
   /* подсказки: полупрозрачный белый кружок с прозрачным плюсом, наведение — плашка над ним */
-  #hints { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  #hints { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
   .hint { position: absolute; left: 0; top: 0; opacity: 0; transition: opacity .3s; }
   .hint.on { opacity: 1; }
   .hint:hover, .hint.open { z-index: 1; }   /* открытая плашка — поверх соседних маркеров */
@@ -43,17 +84,14 @@
   .hint:hover button, .hint.open button { transform: scale(1.18); opacity: 1; }
   .hint-label {
     position: absolute; left: var(--dx, 0px); bottom: 14px; transform: translateX(-50%);
-    width: max-content; max-width: min(260px, calc(100vw - 32px)); padding: 12px 16px;
+    width: max-content; max-width: min(260px, calc(100% - 32px)); padding: 12px 16px;
     background: #fff; color: var(--ink); box-shadow: 0 2px 10px rgba(0, 0, 0, .07);
     font: 500 12px/1.5 var(--font);
     opacity: 0; pointer-events: none; transition: opacity .15s;
   }
   .hint:hover .hint-label, .hint.open .hint-label { opacity: 1; }
   @media (prefers-reduced-motion: reduce) { .hint, .hint button, .hint-label { transition: none; } }
-  #loading {
-    position: fixed; inset: 0; display: grid; place-items: center;
-    font: 500 13px var(--font); color: var(--mute);
-  }
+@media (max-width:1280px){.page{padding-bottom:24px}.ftr-tools{width:auto}}
 </style>
 <script type="importmap">
 { "imports": {
@@ -63,12 +101,54 @@
 </script>
 </head>
 <body>
-<div id="grain"></div>
-<div id="vignette"></div>
+<div class="page">
+<header class="page-hdr">
+<div class="hdr-icons"><select class="fi fi-chev" id="lang" aria-label="Language"></select></div>
+<div class="hdr-time"></div>
+<div class="hdr-blin"><svg viewBox="0 0 156 45" fill="currentColor"><g transform="translate(-1663,-60)"><g transform="translate(1496.168,42.8)"><path d="M202.672,38.576 C205.317333,39.5573333 207.365333,40.9866667 208.816,42.864 C210.266667,44.7413333 210.992,47.0026667 210.992,49.648 C210.992,53.5733333 209.370667,56.6133333 206.128,58.768 C202.885333,60.9226667 198.192,62 192.048,62 L166.832,62 L166.832,17.2 L190.768,17.2 C196.741333,17.2 201.253333,18.2666667 204.304,20.4 C207.354667,22.5333333 208.88,25.3706667 208.88,28.912 C208.88,31.0026667 208.357333,32.88 207.312,34.544 C206.266667,36.208 204.72,37.552 202.672,38.576 Z M181.68,27.76 L181.68,34.416 L188.72,34.416 C192.005333,34.416 193.648,33.3066667 193.648,31.088 C193.648,28.8693333 192.005333,27.76 188.72,27.76 L181.68,27.76 Z M190.768,51.44 C194.096,51.44 195.76,50.2666667 195.76,47.92 C195.76,45.5733333 194.096,44.4 190.768,44.4 L181.68,44.4 L181.68,51.44 L190.768,51.44 Z"/><polygon points="216.304 17.2 231.408 17.2 231.408 50.288 251.632 50.288 251.632 62 216.304 62"/><polygon points="255.792 17.2 270.896 17.2 270.896 62 255.792 62"/><polygon points="322.352 17.2 322.352 62 309.936 62 292.912 41.648 292.912 62 278.192 62 278.192 17.2 290.608 17.2 307.632 37.552 307.632 17.2"/></g></g></svg></div>
+</header>
+<div class="card" id="stage">
 <div id="loading">загрузка…</div>
 <div id="hints"></div>
 <div id="hint"></div>
-<nav id="lang" aria-label="Язык экрана"></nav>
+</div>
+<footer class="ftr">
+<div class="ftr-tools">
+<button class="btn-outline" onclick="openModal('modal-fw')" data-t="fw">Скачать прошивку</button>
+<button class="btn-outline" onclick="openModal('modal-models')" data-t="models">Модели корпуса</button>
+<button class="btn-outline" onclick="openModal('modal-docs')" data-t="docs">Документация</button>
+</div>
+</footer>
+</div>
+<div class="modal" id="modal-fw" onclick="if(event.target===this)this.classList.remove('show')">
+<div class="modal-box mw-md">
+<div class="modal-head"><div class="sec-sub" data-t="fw">Скачать прошивку</div><button class="modal-x" onclick="closeModal('modal-fw')">&times;</button></div>
+<div class="modal-body"><p><span data-t="fw_ver">Последняя версия:</span> <b id="fw-ver">—</b></p><p data-t="fw_note"></p></div>
+<div class="modal-btns"><a class="btn-save" href="ota/firmware_signed.bin" download="blin_firmware.bin" data-t="fw_dl">Скачать firmware.bin</a></div>
+</div>
+</div>
+<div class="modal" id="modal-models" onclick="if(event.target===this)this.classList.remove('show')">
+<div class="modal-box mw-md">
+<div class="modal-head"><div class="sec-sub" data-t="models">Модели корпуса</div><button class="modal-x" onclick="closeModal('modal-models')">&times;</button></div>
+<div class="modal-body"><p data-t="models_note"></p><p data-t="models_screws"></p></div>
+<div class="modal-btns">
+<a class="btn-outline" href="models/front_panel.stl" download data-t="m_front">Передняя панель · STL</a>
+<a class="btn-outline" href="models/back_case.stl" download data-t="m_back">Задняя часть с кнопкой · STL</a>
+<a class="btn-outline" href="models/enclosure.step" download data-t="m_step">Сборка с электроникой · STEP</a>
+</div>
+</div>
+</div>
+<div class="modal" id="modal-docs" onclick="if(event.target===this)this.classList.remove('show')">
+<div class="modal-box mw-md">
+<div class="modal-head"><div class="sec-sub" data-t="docs">Документация</div><button class="modal-x" onclick="closeModal('modal-docs')">&times;</button></div>
+<div class="modal-body"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p></div>
+</div>
+</div>
+<script>
+function openModal(id){var m=document.getElementById(id);if(m)m.classList.add('show');}
+function closeModal(id){var m=document.getElementById(id);if(m)m.classList.remove('show');}
+addEventListener('keydown',function(e){if(e.key==='Escape')document.querySelectorAll('.modal.show').forEach(function(m){m.classList.remove('show')})});
+</script>
 <script type="module" src="./main.js"></script>
 </body>
 </html>

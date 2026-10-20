@@ -8,6 +8,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { BlinScreen, LANGS, loadFont } from './screen.js';
 import { buildProps, setResolution, updateProps } from './props.js';
 import { Hints } from './hints.js';
+import { applySiteLang, LANG_NAMES } from './site.js';
 
 const CENTER = new THREE.Vector3(0, -7, -8);   // середина собранного устройства
 const TOP_Y = 4;          // клик выше этой отметки (мм от центра экрана) — «макушка»
@@ -18,19 +19,22 @@ const PIVOT = new THREE.Vector3(0, -33.1, -14);  // ось шарниров кл
 // ─── сцена ──────────────────────────────────────────────────────────────────
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });   // фон — CSS страницы
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setSize(innerWidth, innerHeight);
+// сцена живёт в карточке-рамке (как основная рамка админки), не на всё окно
+const stage = document.getElementById('stage');
+const stageW = () => stage.clientWidth, stageH = () => stage.clientHeight;
+renderer.setSize(stageW(), stageH());
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-document.body.appendChild(renderer.domElement);
+stage.prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 scene.environmentIntensity = 0.7;
 
-const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 1, 5000);
+const camera = new THREE.PerspectiveCamera(30, stageW() / stageH(), 1, 5000);
 camera.position.set(110, 70, 190);
 if (new URLSearchParams(location.hash.slice(1)).has('front')) camera.position.set(0, 0, 220);   // #front — строго спереди
 
@@ -83,7 +87,8 @@ function setLang(l) {
   document.documentElement.lang = l;
   document.getElementById('hint').textContent = HINT[l];
   hints.setLang(l);
-  for (const b of document.querySelectorAll('#lang button')) b.setAttribute('aria-pressed', b.dataset.lang === l);
+  applySiteLang(l);
+  langBar.value = l;
   lang = l;
 }
 // ─── подсказки ──────────────────────────────────────────────────────────────
@@ -126,18 +131,13 @@ function updateHints() {
   const frontal = camDir.subVectors(camera.position, controls.target).normalize().z > FRONTAL;
   if (assembled) (frontal ? Object.keys(SCREEN_HINTS) : ['top']).forEach(id => show.add(id));
   if (exploded) Object.keys(PART_HINTS).forEach(id => show.add(id));
-  hints.update(camera, show);
+  hints.update(camera, show, stageW(), stageH());
 }
 
 let lang = hash.get('lang') || (navigator.language || 'en').slice(0, 2);
 const langBar = document.getElementById('lang');
-for (const l of LANGS) {
-  const b = document.createElement('button');
-  b.textContent = l.toUpperCase();
-  b.dataset.lang = l;
-  b.onclick = () => setLang(l);
-  langBar.appendChild(b);
-}
+for (const l of LANGS) langBar.add(new Option(LANG_NAMES[l] || l.toUpperCase(), l));
+langBar.onchange = () => setLang(langBar.value);
 setLang(lang);
 
 async function loadScreen() {
@@ -184,6 +184,7 @@ Promise.all([
   propCur = r0;
   document.getElementById('loading').remove();
 }).catch(err => {
+  document.getElementById('loading').dataset.err = 1;
   document.getElementById('loading').textContent =
     `не удалось загрузить сцену (${err.message}) — откройте через http-сервер, см. README`;
 });
@@ -197,7 +198,7 @@ let t = tTarget;
 const hint = document.getElementById('hint');
 function hideHint() { hint.style.opacity = 0; }
 
-addEventListener('wheel', e => {
+stage.addEventListener('wheel', e => {
   e.preventDefault();
   tTarget = THREE.MathUtils.clamp(tTarget + e.deltaY * 0.0015, 0, 1);
   hideHint();
@@ -221,7 +222,8 @@ let down = null;
 let pressT = -1;           // время начала анимации нажатия, с
 
 function hitTop(ev) {
-  ndc.set(ev.clientX / innerWidth * 2 - 1, -(ev.clientY / innerHeight) * 2 + 1);
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set((ev.clientX - r.left) / r.width * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
   ray.setFromCamera(ndc, camera);
   const hit = ray.intersectObjects(parts.map(p => p.obj), false)[0];
   if (!hit) return false;
@@ -322,7 +324,7 @@ const propsRoot = new THREE.Group();
 propsRoot.position.copy(CENTER).negate();
 props.forEach(p => { p.visible = false; propsRoot.add(p); });
 device.add(propsRoot);
-setResolution(innerWidth, innerHeight);
+setResolution(stageW(), stageH());
 const PROP_OUT = 0.25, PROP_IN = 0.45;   // с
 let propCur = 0, propInAt = -1e9;
 const propOutAt = props.map(() => -1e9);
@@ -387,9 +389,10 @@ function frame() {
 }
 frame();
 
-addEventListener('resize', () => {
-  setResolution(innerWidth, innerHeight);
-  camera.aspect = innerWidth / innerHeight;
+new ResizeObserver(() => {
+  const w = stageW(), h = stageH();
+  setResolution(w, h);
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
-});
+  renderer.setSize(w, h);
+}).observe(stage);

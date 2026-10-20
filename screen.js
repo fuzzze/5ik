@@ -252,22 +252,33 @@ export class BlinScreen {
   }
 
   drawChart(g, s) {
-    // chart_redraw(): 24 столбика 3×(1..20), шаг 4, от (72,147); высота — от максимума
-    let mx = 0;
-    for (const h of s.hist) if (h != null && h > mx) mx = h;
+    // chart_redraw(): 24 столбика 3×(1..20), шаг 4, от (72,147); от нулевой линии
+    // (blin::chart_scale/chart_bar): плюс вверх, минус вниз
+    const H = 20;
+    let lo = 0, hi = 0;
+    for (const h of s.hist) if (h != null) { lo = Math.min(lo, h); hi = Math.max(hi, h); }
+    const base = hi > lo ? Math.round(H * hi / (hi - lo)) : H, up = base, dn = H - base;
+    const bar = v => {
+      let b = Math.max(1, hi > lo ? Math.round(Math.abs(v) / (hi - lo) * H) : 0);
+      if (v < 0 ? dn >= 1 : up < 1) return [base, Math.min(b, dn)];
+      if (v < 0) return [H - 1, 1];
+      b = Math.min(b, up);
+      return [base - b, b];
+    };
+    const phUp = up >= dn, room = phUp ? up : dn;    // заглушки — где больше места
     s.hist.forEach((h, i) => {
-      let hp, col;
+      let y, hp, col;
       if (h == null) {
-        hp = this.placeholder[i] % 19 + 1;
+        hp = room > 1 ? this.placeholder[i] % (room - 1) + 1 : 1;
+        y = phUp ? base - hp : base;
         col = '#484848';
       } else {
-        hp = mx > 0 ? Math.round(h / mx * 20) : 1;
-        hp = Math.min(20, Math.max(1, hp));
+        [y, hp] = bar(h);
         col = (s.gap >> i) & 1 ? GRAY : this.zone(s, h);
       }
       g.fillStyle = col;
       g.beginPath();
-      g.roundRect(72 + i * 4, 147 + 20 - hp, 3, hp, Math.min(1, hp / 2));
+      g.roundRect(72 + i * 4, 147 + y, 3, hp, Math.min(1, hp / 2));
       g.fill();
     });
   }

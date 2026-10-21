@@ -63,6 +63,9 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.enableZoom = false;   // колесо занято взрыв-схемой
 controls.enablePan = false;
+// два пальца — только взрыв-схема (см. touchmove ниже). С выключенными zoom/pan OrbitControls
+// на втором пальце выходит, не сбросив вращение от первого, — и жест крутит модель.
+controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: null };
 controls.target.set(0, 0, 0);
 
 // device: центр собранного устройства в нуле; press: поворот вокруг шарниров
@@ -222,6 +225,10 @@ stage.addEventListener('wheel', e => {
 }, { passive: false });
 
 let pinchY = null;
+// после жеста двумя пальцами не вращать, пока не подняты все: иначе оставшийся палец докручивает
+renderer.domElement.addEventListener('touchstart', e => {
+  if (e.touches.length > 1) controls.enableRotate = false;
+}, { passive: true });
 renderer.domElement.addEventListener('touchmove', e => {
   if (e.touches.length !== 2) { pinchY = null; return; }
   const y = (e.touches[0].clientY + e.touches[1].clientY) / 2;
@@ -229,7 +236,14 @@ renderer.domElement.addEventListener('touchmove', e => {
   pinchY = y;
   interacted();
 }, { passive: true });
-renderer.domElement.addEventListener('touchend', () => { pinchY = null; });
+renderer.domElement.addEventListener('touchend', e => {
+  pinchY = null;
+  if (!e.touches.length) controls.enableRotate = true;
+});
+renderer.domElement.addEventListener('touchcancel', e => {
+  pinchY = null;
+  if (!e.touches.length) controls.enableRotate = true;
+});
 
 // ─── клик по макушке ────────────────────────────────────────────────────────
 const ray = new THREE.Raycaster();
@@ -381,7 +395,7 @@ function turnAngle(now) {
 // На широком (десктопном) экране разобранный вид кадрируется по деталям: зум (до ×2) и сдвиг
 // кадра так, чтобы разлёт занял сцену с полями. Перспектива не меняется — меняется только
 // «объектив». Считается каждый кадр: рамка разлёта зависит от ракурса (покачивание, вращение).
-const FIT_MAX = 2, FIT_MARGIN = 0.07, EXPLODE_TILT = THREE.MathUtils.degToRad(-12);   // потолок зума; поле — доля полуразмера сцены
+const FIT_MAX = 2, FIT_MARGIN = 0.07;   // потолок зума; поле — доля полуразмера сцены
 const fitBox = new THREE.Box3(), fitV = new THREE.Vector3();
 let fitZoom = 1, fitX = 0, fitY = 0;
 const wideness = () => THREE.MathUtils.clamp((camera.aspect - 1) / 0.3, 0, 1);   // 0 — узкий экран, 1 — широкий
@@ -420,8 +434,6 @@ function frame() {
   for (const p of parts) p.obj.position.z = p.base + explodeOffset(p.group, t);
   // в разобранном виде середина смещается назад — держим её в центре кадра
   device.position.z = 19 * e;
-  // разобранный — наклоняем к зрителю (как камера пониже): разлёт ниже ростом и влезает с зумом ×2
-  device.rotation.x = EXPLODE_TILT * e * wideness();
   device.rotation.z = turnAngle(now);
   // нажатие: корпус наклоняется вперёд вокруг шарниров (только в собранном виде)
   press.rotation.x = pressAngle(now) * (1 - e);

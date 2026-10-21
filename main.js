@@ -10,6 +10,7 @@ import { buildProps, setResolution, updateProps } from './props.js';
 import { Hints } from './hints.js';
 import { applySiteLang, LANG_NAMES } from './site.js';
 import './flash.js';
+import { applyFinish } from './finish.js';
 
 const CENTER = new THREE.Vector3(0, -7, -8);   // середина собранного устройства
 const TOP_Y = 4;          // клик выше этой отметки (мм от центра экрана) — «макушка»
@@ -220,6 +221,7 @@ Promise.all([
   for (let i = 0; i < r0; i++) screen.rotate();
   device.rotation.z = turnFrom = turnTo = r0 * Math.PI / 2;
   propCur = r0;
+  applyFinish(root, hash.get('finish'));   // шагрень; #finish=print — полоски слоёв печати
   document.getElementById('loading').remove();
 }).catch(err => {
   document.getElementById('loading').dataset.err = 1;

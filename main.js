@@ -378,6 +378,41 @@ function turnAngle(now) {
   return turnFrom + (turnTo - turnFrom) * ease;
 }
 
+// На широком (десктопном) экране разобранный вид кадрируется по деталям: зум (до ×2) и сдвиг
+// кадра так, чтобы разлёт занял сцену с полями. Перспектива не меняется — меняется только
+// «объектив». Считается каждый кадр: рамка разлёта зависит от ракурса (покачивание, вращение).
+const FIT_MAX = 2, FIT_MARGIN = 0.07, EXPLODE_TILT = THREE.MathUtils.degToRad(-12);   // потолок зума; поле — доля полуразмера сцены
+const fitBox = new THREE.Box3(), fitV = new THREE.Vector3();
+let fitZoom = 1, fitX = 0, fitY = 0;
+const wideness = () => THREE.MathUtils.clamp((camera.aspect - 1) / 0.3, 0, 1);   // 0 — узкий экран, 1 — широкий
+function frameExploded(e) {
+  const k = e * wideness();   // 0 — собран или узкий экран
+  let zoom = 1, cx = 0, cy = 0;
+  if (k > 0 && parts.length) {
+    camera.zoom = 1; camera.clearViewOffset(); camera.updateProjectionMatrix();
+    fitBox.makeEmpty();
+    for (const { obj } of parts) {
+      const b = obj.geometry.boundingBox ?? (obj.geometry.computeBoundingBox(), obj.geometry.boundingBox);
+      for (let i = 0; i < 8; i++) {
+        fitV.set(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z)
+          .applyMatrix4(obj.matrixWorld).project(camera);
+        fitBox.expandByPoint(fitV);
+      }
+    }
+    const fit = 2 * (1 - FIT_MARGIN) / Math.max(fitBox.max.x - fitBox.min.x, fitBox.max.y - fitBox.min.y);
+    zoom = 1 + (Math.min(FIT_MAX, fit) - 1) * k;
+    cx = (fitBox.min.x + fitBox.max.x) / 2 * k;
+    cy = (fitBox.min.y + fitBox.max.y) / 2 * k;
+  }
+  // плавно — без дрожи от покачивания
+  fitZoom += (zoom - fitZoom) * 0.15; fitX += (cx - fitX) * 0.15; fitY += (cy - fitY) * 0.15;
+  const w = stageW(), h = stageH();
+  camera.zoom = fitZoom;
+  if (Math.abs(fitX) + Math.abs(fitY) > 1e-4) camera.setViewOffset(w, h, fitX * fitZoom * w / 2, -fitY * fitZoom * h / 2, w, h);
+  else camera.clearViewOffset();
+  camera.updateProjectionMatrix();
+}
+
 function frame() {
   const now = performance.now() / 1000;
   t += (tTarget - t) * 0.12;
@@ -385,6 +420,8 @@ function frame() {
   for (const p of parts) p.obj.position.z = p.base + explodeOffset(p.group, t);
   // в разобранном виде середина смещается назад — держим её в центре кадра
   device.position.z = 19 * e;
+  // разобранный — наклоняем к зрителю (как камера пониже): разлёт ниже ростом и влезает с зумом ×2
+  device.rotation.x = EXPLODE_TILT * e * wideness();
   device.rotation.z = turnAngle(now);
   // нажатие: корпус наклоняется вперёд вокруг шарниров (только в собранном виде)
   press.rotation.x = pressAngle(now) * (1 - e);
@@ -395,6 +432,7 @@ function frame() {
   swing(now);
   controls.update();
   scene.updateMatrixWorld();
+  frameExploded(e);
   fadeProps(now, e);
   updateHints();
   if (screen) {

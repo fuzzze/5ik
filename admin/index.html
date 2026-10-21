@@ -67,7 +67,7 @@
   var netFetch = window.fetch.bind(window);
   window.fetch = function (url, opt) {
     var u = String(url), p = u.split('?')[0], q = new URLSearchParams(u.split('?')[1] || '');
-    if (u.charAt(0) !== '/') return netFetch(url, opt);   // файлы сайта (../screen/…) — по сети
+    if (u.charAt(0) !== '/' || u.charAt(1) === '/') return netFetch(url, opt);   // файлы сайта (../screen/…) и внешние (//…, https:) — по сети
     if (p === '/api') return ok(api());
     if (p === '/i18n') return ok(D.i18n[q.get('lang')] || {});
     if (p === '/peers') return ok(D.peers);
@@ -83,7 +83,20 @@
     return new Promise(function () {});
   };
 })();
-</script><meta charset="utf-8">
+</script>
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=113711343', 'ym');
+
+    ym(113711343, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+</script>
+<!-- /Yandex.Metrika counter -->
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#e8e8e8">
@@ -392,6 +405,9 @@ pre#logbox{font-size:12px;line-height:1.4;color:#555;background:#f5f5f5;border:1
   .sw .sl,.sw .bl{touch-action:none}
 }
 </style></head><body class="theme-light auth-off">
+<!-- Yandex.Metrika counter (noscript) -->
+<noscript><div><img src="https://mc.yandex.ru/watch/113711343" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+
 <div class="page">
 <header class="page-hdr">
 <div class="hdr-icons">

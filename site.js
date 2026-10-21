@@ -2,6 +2,7 @@
 // версия прошивки из ota/manifest.json (тот же, что читают устройства).
 export const SITE_TEXT = {
   ru: {
+    fw_btn: 'Прошивка',
     intro1: 'Это BLIN.', intro2: 'Компактный удалённый температурный монитор,', intro3: 'который вы можете собрать самостоятельно.', intro_i: 'О проекте',
     fl_open: 'Прошить новое устройство по USB',
     fl: 'Прошивка по USB',
@@ -30,6 +31,7 @@ export const SITE_TEXT = {
     loading: 'загрузка…',
   },
   en: {
+    fw_btn: 'Firmware',
     intro1: 'This is BLIN.', intro2: 'A compact remote temperature monitor', intro3: 'you can build yourself.', intro_i: 'About',
     fl_open: 'Flash a new device over USB',
     fl: 'Flash over USB',
@@ -58,6 +60,7 @@ export const SITE_TEXT = {
     loading: 'loading…',
   },
   de: {
+    fw_btn: 'Firmware',
     intro1: 'Das ist BLIN.', intro2: 'Ein kompakter Fern-Temperaturmonitor,', intro3: 'den Sie selbst bauen können.', intro_i: 'Über das Projekt',
     fl_open: 'Neues Gerät per USB flashen',
     fl: 'Flashen per USB',
@@ -86,6 +89,7 @@ export const SITE_TEXT = {
     loading: 'wird geladen…',
   },
   fr: {
+    fw_btn: 'Firmware',
     intro1: 'Voici BLIN.', intro2: 'Un moniteur de température à distance compact', intro3: 'que vous pouvez assembler vous-même.', intro_i: 'À propos',
     fl_open: 'Flasher un nouvel appareil par USB',
     fl: 'Flasher par USB',
@@ -114,6 +118,7 @@ export const SITE_TEXT = {
     loading: 'chargement…',
   },
   es: {
+    fw_btn: 'Firmware',
     intro1: 'Esto es BLIN.', intro2: 'Un monitor de temperatura remoto y compacto', intro3: 'que puedes montar tú mismo.', intro_i: 'Acerca de',
     fl_open: 'Flashear un dispositivo nuevo por USB',
     fl: 'Flashear por USB',
@@ -142,6 +147,7 @@ export const SITE_TEXT = {
     loading: 'cargando…',
   },
   pt: {
+    fw_btn: 'Firmware',
     intro1: 'Este é o BLIN.', intro2: 'Um monitor de temperatura remoto e compacto', intro3: 'que você mesmo pode montar.', intro_i: 'Sobre',
     fl_open: 'Gravar um dispositivo novo por USB',
     fl: 'Gravação por USB',
@@ -174,7 +180,7 @@ export const SITE_TEXT = {
 // названия в списке — как в админке (admin_ext.h, блок «Локализация»)
 export const LANG_NAMES = { en: 'English', ru: 'Русский', de: 'Deutsch', fr: 'Français', es: 'Español', pt: 'Português' };
 
-let lang = 'en';
+let lang = 'ru';
 export const siteLang = () => lang;
 
 export function applySiteLang(l) {

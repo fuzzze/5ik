@@ -84,7 +84,7 @@ let screenTex = null;
 // #explode, #lang=de, #explode&lang=de — параметры в hash (query до артефакта не доходит)
 const hash = new URLSearchParams(location.hash.slice(1));
 function setLang(l) {
-  if (!LANGS.includes(l)) l = 'en';
+  if (!LANGS.includes(l)) l = 'ru';
   if (screen) screen.lang = l;
   document.documentElement.lang = l;
   hints.setLang(l);
@@ -166,7 +166,7 @@ function updateHints() {
   hints.update(camera, show, stageW(), stageH());
 }
 
-let lang = hash.get('lang') || (navigator.language || 'en').slice(0, 2);
+let lang = hash.get('lang') || 'ru';   // по умолчанию русский, другой — кнопками в шапке или #lang=
 const langBar = document.getElementById('lang');
 for (const l of LANGS) {
   const b = document.createElement('button');

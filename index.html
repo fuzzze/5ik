@@ -1,6 +1,18 @@
 <!doctype html>
 <html lang="ru">
 <head>
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=113711343', 'ym');
+
+    ym(113711343, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+</script>
+<!-- /Yandex.Metrika counter -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BLIN</title>
@@ -84,7 +96,7 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 #stage canvas{position:absolute;inset:0;display:block;touch-action:none}
 #loading{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;color:var(--mute)}
 /* прелоадер: каомодзи хулиганского режима в кружке, кадр 400 мс (как KAOMOJI в screen.js) */
-#loading .kao{width:288px;height:288px;border:1px solid var(--ink);border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:66px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+#loading .kao{width:288px;height:288px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:66px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
 #hints{z-index:3}
 /* вступление в левом верхнем углу сцены: строки — чёрные плашки; при первом взаимодействии
    сворачивается в кружок «i» в левый верхний угол своего места, по клику разворачивается */
@@ -135,6 +147,8 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 </script>
 </head>
 <body>
+<!-- Yandex.Metrika counter (noscript) -->
+<noscript><div><img src="https://mc.yandex.ru/watch/113711343" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 <div class="page">
 <header class="page-hdr">
 <nav class="hdr-icons" id="lang" aria-label="Language"></nav>
@@ -160,7 +174,7 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 </div>
 <footer class="ftr">
 <div class="ftr-tools">
-<button class="btn-outline" onclick="openModal('modal-fw')" data-t="fw">Скачать прошивку</button>
+<button class="btn-outline" onclick="openModal('modal-fw')" data-t="fw_btn">Прошивка</button>
 <button class="btn-outline" onclick="openModal('modal-models')" data-t="models">Модели корпуса</button>
 <a class="btn-outline" href="docs/" data-t="docs">Документация</a>
 <a class="btn-outline" href="admin/" id="admin-link" data-t="admin">Демо админки</a>

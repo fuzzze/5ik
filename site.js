@@ -2,6 +2,7 @@
 // версия прошивки из ota/manifest.json (тот же, что читают устройства).
 export const SITE_TEXT = {
   ru: {
+    intro1: 'Это BLIN.', intro2: 'Компактный удалённый температурный монитор,', intro3: 'который вы можете собрать самостоятельно.', intro_i: 'О проекте',
     fl_open: 'Прошить новое устройство по USB',
     fl: 'Прошивка по USB',
     fl_ver: 'Версия',
@@ -29,6 +30,7 @@ export const SITE_TEXT = {
     loading: 'загрузка…',
   },
   en: {
+    intro1: 'This is BLIN.', intro2: 'A compact remote temperature monitor', intro3: 'you can build yourself.', intro_i: 'About',
     fl_open: 'Flash a new device over USB',
     fl: 'Flash over USB',
     fl_ver: 'Version',
@@ -56,6 +58,7 @@ export const SITE_TEXT = {
     loading: 'loading…',
   },
   de: {
+    intro1: 'Das ist BLIN.', intro2: 'Ein kompakter Fern-Temperaturmonitor,', intro3: 'den Sie selbst bauen können.', intro_i: 'Über das Projekt',
     fl_open: 'Neues Gerät per USB flashen',
     fl: 'Flashen per USB',
     fl_ver: 'Version',
@@ -83,6 +86,7 @@ export const SITE_TEXT = {
     loading: 'wird geladen…',
   },
   fr: {
+    intro1: 'Voici BLIN.', intro2: 'Un moniteur de température à distance compact', intro3: 'que vous pouvez assembler vous-même.', intro_i: 'À propos',
     fl_open: 'Flasher un nouvel appareil par USB',
     fl: 'Flasher par USB',
     fl_ver: 'Version',
@@ -110,6 +114,7 @@ export const SITE_TEXT = {
     loading: 'chargement…',
   },
   es: {
+    intro1: 'Esto es BLIN.', intro2: 'Un monitor de temperatura remoto y compacto', intro3: 'que puedes montar tú mismo.', intro_i: 'Acerca de',
     fl_open: 'Flashear un dispositivo nuevo por USB',
     fl: 'Flashear por USB',
     fl_ver: 'Versión',
@@ -137,6 +142,7 @@ export const SITE_TEXT = {
     loading: 'cargando…',
   },
   pt: {
+    intro1: 'Este é o BLIN.', intro2: 'Um monitor de temperatura remoto e compacto', intro3: 'que você mesmo pode montar.', intro_i: 'Sobre',
     fl_open: 'Gravar um dispositivo novo por USB',
     fl: 'Gravação por USB',
     fl_ver: 'Versão',
@@ -177,7 +183,27 @@ export function applySiteLang(l) {
   for (const el of document.querySelectorAll('[data-t]')) el.textContent = T[el.dataset.t];
   document.querySelector('#loading .kao')?.setAttribute('aria-label', T.loading);   // прелоадер — каомодзи, текст для скринридера
   document.getElementById('admin-link')?.setAttribute('href', 'admin/#lang=' + l);   // демо админки — на том же языке
+  document.querySelector('#intro .intro-i')?.setAttribute('aria-label', T.intro_i);
   document.dispatchEvent(new Event('blin-lang'));
+}
+
+// вступление на сцене: первое взаимодействие (колесо, касание, скролл, клавиши) сворачивает
+// его в кружок «i», клик по кружку — разворачивает обратно до следующего взаимодействия
+const intro = document.getElementById('intro');
+if (intro) {
+  const btn = intro.querySelector('.intro-i');
+  const fold = min => {
+    intro.classList.toggle('min', min);
+    btn.setAttribute('aria-expanded', String(!min));
+  };
+  const collapse = e => {
+    if (intro.classList.contains('min') || (e.target instanceof Node && btn.contains(e.target))) return;
+    fold(true);
+  };
+  const stage = document.getElementById('stage');
+  for (const t of ['pointerdown', 'wheel', 'touchstart']) stage.addEventListener(t, collapse, { capture: true, passive: true });
+  for (const t of ['scroll', 'keydown']) window.addEventListener(t, collapse, { passive: true });
+  btn.addEventListener('click', () => fold(false));
 }
 
 fetch('ota/manifest.json', { cache: 'no-cache' }).then(r => r.json())

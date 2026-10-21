@@ -93,6 +93,10 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 .ftr-tools a.btn-outline{display:flex;align-items:center;justify-content:center;text-decoration:none}
 .modal-box a.btn-save,.modal-box a.btn-outline{display:flex;align-items:center;justify-content:center;text-decoration:none}
 .modal-body p+p{margin-top:10px}
+/* модели: STL на всю строку, рядом — тот же файл в 3MF */
+.dl-row{display:flex;gap:8px}
+.modal-box .dl-row .btn-save{flex:1;width:auto}
+.modal-box .dl-row .btn-outline{flex:0 0 72px;width:auto}
 #stage canvas{position:absolute;inset:0;display:block;touch-action:none}
 #loading{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;color:var(--mute)}
 /* прелоадер: каомодзи хулиганского режима в кружке, кадр 400 мс (как KAOMOJI в screen.js) */
@@ -207,8 +211,8 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 <div class="modal-head"><div class="sec-sub" data-t="models">Модели корпуса</div><button class="modal-x" onclick="closeModal('modal-models')">&times;</button></div>
 <div class="modal-body"><p data-t="models_note"></p><p data-t="models_snaps"></p></div>
 <div class="modal-btns">
-<a class="btn-save" href="models/front_panel.stl" download data-t="m_front">Передняя панель · STL</a>
-<a class="btn-save" href="models/back_case.stl" download data-t="m_back">Задняя часть с кнопкой · STL</a>
+<div class="dl-row"><a class="btn-save" href="models/front_panel.stl" download data-t="m_front">Передняя панель · STL</a><a class="btn-outline" href="models/front_panel.3mf" download data-ta="m_front3" aria-label="Передняя панель · 3MF" title="Передняя панель · 3MF">3MF</a></div>
+<div class="dl-row"><a class="btn-save" href="models/back_case.stl" download data-t="m_back">Задняя часть с кнопкой · STL</a><a class="btn-outline" href="models/back_case.3mf" download data-ta="m_back3" aria-label="Задняя часть с кнопкой · 3MF" title="Задняя часть с кнопкой · 3MF">3MF</a></div>
 </div>
 </div>
 </div>

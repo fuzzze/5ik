@@ -25,9 +25,9 @@ export const SITE_TEXT = {
     fw: 'Скачать прошивку', models: 'Модели корпуса', docs: 'Документация', admin: 'Демо админки',
     fw_ver: 'Последняя версия:', fw_dl: 'Скачать firmware.bin',
     fw_note: 'Установка: админка устройства → «Обновление прошивки» → «Загрузить файл прошивки .bin». С включённым автообновлением устройство поставит её само.',
-    models_note: 'Весь корпус печатается из PETG: шарниры кнопки-дна и пальцы защёлок гнутся. STL уже в положении для печати. Передняя панель — стыком на стол, лицом вверх; поддержки нужны только внутри, под крышей и штифтами. Задняя часть — задней стенкой на стол, с поддержками под полкой.',
+    models_note: 'Весь корпус печатается из PETG: шарниры кнопки-дна и пальцы защёлок гнутся. STL и 3MF уже в положении для печати. Передняя панель — стыком на стол, лицом вверх; поддержки нужны только внутри, под крышей и штифтами. Задняя часть — задней стенкой на стол, с поддержками под полкой.',
     models_snaps: 'Крепежа нет: задняя часть защёлкивается на переднюю. Чтобы открыть, подденьте отвёрткой в пазах снизу.',
-    m_front: 'Передняя панель · STL', m_back: 'Задняя часть с кнопкой · STL',
+    m_front: 'Передняя панель · STL', m_back: 'Задняя часть с кнопкой · STL', m_front3: 'Передняя панель · 3MF', m_back3: 'Задняя часть с кнопкой · 3MF',
     loading: 'загрузка…',
   },
   en: {
@@ -54,9 +54,9 @@ export const SITE_TEXT = {
     fw: 'Download firmware', models: 'Enclosure models', docs: 'Documentation', admin: 'Admin demo',
     fw_ver: 'Latest version:', fw_dl: 'Download firmware.bin',
     fw_note: 'To install: device admin → “Firmware update” → “Upload firmware file .bin”. With auto-update on, the device installs it by itself.',
-    models_note: 'Print the whole enclosure in PETG: the hinges of the bottom button and the snap fingers flex. The STLs are already oriented for printing. Print the front panel seam-down, face up; supports are needed only inside, under the roof and the pegs. Print the back back-down, with supports under the ledge.',
+    models_note: 'Print the whole enclosure in PETG: the hinges of the bottom button and the snap fingers flex. The STL and 3MF files are already oriented for printing. Print the front panel seam-down, face up; supports are needed only inside, under the roof and the pegs. Print the back back-down, with supports under the ledge.',
     models_snaps: 'No screws: the back snaps onto the front. To open, pry with a screwdriver in the notches at the bottom.',
-    m_front: 'Front panel · STL', m_back: 'Back case with button · STL',
+    m_front: 'Front panel · STL', m_back: 'Back case with button · STL', m_front3: 'Front panel · 3MF', m_back3: 'Back case with button · 3MF',
     loading: 'loading…',
   },
   de: {
@@ -83,9 +83,9 @@ export const SITE_TEXT = {
     fw: 'Firmware herunterladen', models: 'Gehäusemodelle', docs: 'Dokumentation', admin: 'Admin-Demo',
     fw_ver: 'Neueste Version:', fw_dl: 'firmware.bin herunterladen',
     fw_note: 'Installation: Geräte-Admin → „Firmware-Update“ → „Firmware-Datei .bin hochladen“. Mit Auto-Update installiert das Gerät sie selbst.',
-    models_note: 'Das ganze Gehäuse aus PETG drucken: die Scharniere der Bodentaste und die Rastfinger biegen sich. Die STL-Dateien sind schon druckfertig ausgerichtet. Die Frontblende mit der Fuge nach unten, Front nach oben drucken; Stützen nur innen, unter dem Dach und den Stiften. Das Rückteil mit der Rückwand nach unten, mit Stützen unter der Stufe.',
+    models_note: 'Das ganze Gehäuse aus PETG drucken: die Scharniere der Bodentaste und die Rastfinger biegen sich. Die STL- und 3MF-Dateien sind schon druckfertig ausgerichtet. Die Frontblende mit der Fuge nach unten, Front nach oben drucken; Stützen nur innen, unter dem Dach und den Stiften. Das Rückteil mit der Rückwand nach unten, mit Stützen unter der Stufe.',
     models_snaps: 'Keine Schrauben: das Rückteil rastet an der Frontblende ein. Zum Öffnen mit einem Schraubendreher in den Kerben unten aufhebeln.',
-    m_front: 'Frontblende · STL', m_back: 'Rückteil mit Taste · STL',
+    m_front: 'Frontblende · STL', m_back: 'Rückteil mit Taste · STL', m_front3: 'Frontblende · 3MF', m_back3: 'Rückteil mit Taste · 3MF',
     loading: 'wird geladen…',
   },
   fr: {
@@ -112,9 +112,9 @@ export const SITE_TEXT = {
     fw: 'Télécharger le firmware', models: 'Modèles du boîtier', docs: 'Documentation', admin: 'Démo admin',
     fw_ver: 'Dernière version :', fw_dl: 'Télécharger firmware.bin',
     fw_note: 'Installation : admin de l’appareil → « Mise à jour du firmware » → « Envoyer le fichier .bin ». Avec la mise à jour auto, l’appareil l’installe tout seul.',
-    models_note: 'Tout le boîtier s’imprime en PETG : les charnières du bouton du fond et les doigts des clips fléchissent. Les STL sont déjà orientés pour l’impression. La façade s’imprime joint en bas, face en haut ; supports uniquement à l’intérieur, sous le toit et les ergots. L’arrière s’imprime dos en bas, avec supports sous le rebord.',
+    models_note: 'Tout le boîtier s’imprime en PETG : les charnières du bouton du fond et les doigts des clips fléchissent. Les STL et 3MF sont déjà orientés pour l’impression. La façade s’imprime joint en bas, face en haut ; supports uniquement à l’intérieur, sous le toit et les ergots. L’arrière s’imprime dos en bas, avec supports sous le rebord.',
     models_snaps: 'Sans vis : l’arrière se clipse sur la façade. Pour ouvrir, faites levier avec un tournevis dans les encoches en bas.',
-    m_front: 'Façade · STL', m_back: 'Arrière avec bouton · STL',
+    m_front: 'Façade · STL', m_back: 'Arrière avec bouton · STL', m_front3: 'Façade · 3MF', m_back3: 'Arrière avec bouton · 3MF',
     loading: 'chargement…',
   },
   es: {
@@ -141,9 +141,9 @@ export const SITE_TEXT = {
     fw: 'Descargar firmware', models: 'Modelos de la carcasa', docs: 'Documentación', admin: 'Demo del panel',
     fw_ver: 'Última versión:', fw_dl: 'Descargar firmware.bin',
     fw_note: 'Instalación: admin del dispositivo → «Actualización del firmware» → «Subir archivo .bin». Con la actualización automática, el dispositivo la instala solo.',
-    models_note: 'Toda la carcasa se imprime en PETG: las bisagras del botón inferior y los dedos de los clips se flexionan. Los STL ya están orientados para imprimir. El panel frontal se imprime con la junta abajo y la cara arriba; soportes solo por dentro, bajo el techo y los pernos. La parte trasera, con la tapa trasera abajo y soportes bajo el escalón.',
+    models_note: 'Toda la carcasa se imprime en PETG: las bisagras del botón inferior y los dedos de los clips se flexionan. Los STL y 3MF ya están orientados para imprimir. El panel frontal se imprime con la junta abajo y la cara arriba; soportes solo por dentro, bajo el techo y los pernos. La parte trasera, con la tapa trasera abajo y soportes bajo el escalón.',
     models_snaps: 'Sin tornillos: la parte trasera encaja a presión en la frontal. Para abrir, haz palanca con un destornillador en las ranuras de abajo.',
-    m_front: 'Panel frontal · STL', m_back: 'Parte trasera con botón · STL',
+    m_front: 'Panel frontal · STL', m_back: 'Parte trasera con botón · STL', m_front3: 'Panel frontal · 3MF', m_back3: 'Parte trasera con botón · 3MF',
     loading: 'cargando…',
   },
   pt: {
@@ -170,9 +170,9 @@ export const SITE_TEXT = {
     fw: 'Baixar firmware', models: 'Modelos do gabinete', docs: 'Documentação', admin: 'Demo do painel',
     fw_ver: 'Última versão:', fw_dl: 'Baixar firmware.bin',
     fw_note: 'Instalação: admin do dispositivo → «Atualização de firmware» → «Enviar arquivo .bin». Com a atualização automática, o dispositivo a instala sozinho.',
-    models_note: 'Todo o gabinete é impresso em PETG: as dobradiças do botão inferior e os dedos dos encaixes flexionam. Os STL já estão orientados para impressão. Imprima o painel frontal com a junta para baixo e a face para cima; suportes só por dentro, sob o teto e os pinos. A parte traseira, com o fundo para baixo e suportes sob o degrau.',
+    models_note: 'Todo o gabinete é impresso em PETG: as dobradiças do botão inferior e os dedos dos encaixes flexionam. Os STL e 3MF já estão orientados para impressão. Imprima o painel frontal com a junta para baixo e a face para cima; suportes só por dentro, sob o teto e os pinos. A parte traseira, com o fundo para baixo e suportes sob o degrau.',
     models_snaps: 'Sem parafusos: a parte traseira encaixa na frontal. Para abrir, faça alavanca com uma chave de fenda nos entalhes de baixo.',
-    m_front: 'Painel frontal · STL', m_back: 'Parte traseira com botão · STL',
+    m_front: 'Painel frontal · STL', m_back: 'Parte traseira com botão · STL', m_front3: 'Painel frontal · 3MF', m_back3: 'Parte traseira com botão · 3MF',
     loading: 'carregando…',
   },
 };
@@ -187,6 +187,7 @@ export function applySiteLang(l) {
   lang = l;
   const T = SITE_TEXT[l] || SITE_TEXT.en;
   for (const el of document.querySelectorAll('[data-t]')) el.textContent = T[el.dataset.t];
+  for (const el of document.querySelectorAll('[data-ta]')) { el.title = T[el.dataset.ta]; el.setAttribute('aria-label', T[el.dataset.ta]); }   // кнопки без текста-перевода (3MF)
   document.querySelector('#loading .kao')?.setAttribute('aria-label', T.loading);   // прелоадер — каомодзи, текст для скринридера
   document.getElementById('admin-link')?.setAttribute('href', 'admin/#lang=' + l);   // демо админки — на том же языке
   document.querySelector('#intro .intro-i')?.setAttribute('aria-label', T.intro_i);

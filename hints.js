@@ -61,7 +61,7 @@ export const HINT_TEXT = {
 };
 
 // кружок с плюсом-«дыркой»: evenodd вырезает плюс из круга
-const ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" fill-rule="evenodd" ' +
+const ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" ' +
   'd="M12 1a11 11 0 1 1 0 22a11 11 0 1 1 0-22zM10.9 6.5h2.2v4.4h4.4v2.2h-4.4v4.4h-2.2v-4.4H6.5v-2.2h4.4z"/></svg>';
 
 export class Hints {
@@ -74,9 +74,10 @@ export class Hints {
 
   // onPress — действие по клику на маркер вместо открытия плашки (маркер на макушке
   // стоит там, где нажимают кнопку: клик по нему — тот же клик по макушке)
-  add(id, pos, onPress) {
+  // dark — тёмный кружок (маркеры на светлом фоне сцены: макушка, детали разобранной схемы)
+  add(id, pos, onPress, dark = false) {
     const el = document.createElement('div');
-    el.className = 'hint';
+    el.className = dark ? 'hint dark' : 'hint';
     el.innerHTML = `<button aria-label="">${ICON}</button><span class="hint-label"></span>`;
     const btn = el.querySelector('button');
     btn.onclick = () => {         // касание на телефоне: открыть/закрыть

@@ -112,31 +112,33 @@ function screenPoint(px, py) {
 }
 // кружки — у края элемента, чтобы не закрывать саму информацию
 const SCREEN_HINTS = { temp: [182, 76], min: [36, 141], max: [204, 141], icons: [176, 51], chart: [176, 157] };
-// у деталей разобранной схемы — под нижней точкой детали на экране, с отступом (см. partBottom)
+// у деталей разобранной схемы — под нижней точкой детали на экране, с отступом (см. partEdge)
 const PART_HINTS = ['front', 'display', 's2', 'buzzer', 'back'];
-hints.add('top', () => modelPoint(0, 21.3, -6), () => pressTop());   // маркер стоит на макушке: клик — нажатие
+hints.add('top', () => partEdge(null, 1), () => pressTop(), true);   // над макушкой: клик — нажатие
 for (const [id, [px, py]] of Object.entries(SCREEN_HINTS)) hints.add(id, () => screenPoint(px, py));
-for (const g of PART_HINTS) hints.add(g, () => partBottom(g));
+for (const g of PART_HINTS) hints.add(g, () => partEdge(g, -1), null, true);
 
-// Точка под деталью: проекция её вершин (выборка — до HINT_SAMPLE на деталь), по центру
-// по горизонтали, ниже нижней точки на HINT_GAP px; глубина — центра детали.
+// Точка у края детали на экране: проекция её вершин (выборка — до HINT_SAMPLE на группу),
+// по центру по горизонтали, на HINT_GAP px ниже нижней (side −1) или выше верхней (side 1)
+// точки; глубина — центра детали. group null — вся модель (маркер над макушкой).
 const HINT_GAP = 18, HINT_SAMPLE = 600;   // px от края детали до центра кружка (16 px)
 const partBox = new THREE.Box3(), partV = new THREE.Vector3(), partC = new THREE.Vector3();
 const partPts = new Map();   // группа → [[сетка, Float32Array локальных точек]]
 function partSamples(group) {
   if (!partPts.has(group)) {
-    const list = parts.filter(p => p.group === group).map(p => {
+    const mine = parts.filter(p => group === null || p.group === group);
+    partPts.set(group, mine.map(p => {
       const pos = p.obj.geometry.attributes.position, n = pos.count;
-      const step = Math.max(1, Math.floor(n * parts.filter(q => q.group === group).length / HINT_SAMPLE));
+      const budget = group === null ? 3 * HINT_SAMPLE : HINT_SAMPLE;   // вся модель — выборка гуще
+      const step = Math.max(1, Math.floor(n * mine.length / budget));
       const a = [];
       for (let i = 0; i < n; i += step) a.push(pos.getX(i), pos.getY(i), pos.getZ(i));
       return [p.obj, new Float32Array(a)];
-    });
-    partPts.set(group, list);
+    }));
   }
   return partPts.get(group);
 }
-function partBottom(group) {
+function partEdge(group, side) {
   partBox.makeEmpty();
   partC.set(0, 0, 0);
   let n = 0;
@@ -148,8 +150,8 @@ function partBottom(group) {
     }
   }
   const z = partC.divideScalar(Math.max(n, 1)).project(camera).z;
-  return partV.set((partBox.min.x + partBox.max.x) / 2, partBox.min.y - 2 * HINT_GAP / stageH(), z)
-    .unproject(camera);
+  const y = side > 0 ? partBox.max.y + 2 * HINT_GAP / stageH() : partBox.min.y - 2 * HINT_GAP / stageH();
+  return partV.set((partBox.min.x + partBox.max.x) / 2, y, z).unproject(camera);
 }
 
 const FRONTAL = Math.cos(THREE.MathUtils.degToRad(8));   // «строго спереди» — в пределах 8°

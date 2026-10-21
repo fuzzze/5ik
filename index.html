@@ -83,7 +83,7 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 #stage canvas{position:absolute;inset:0;display:block;touch-action:none}
 #loading{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;color:var(--mute)}
 /* прелоадер: каомодзи хулиганского режима в кружке, кадр 400 мс (как KAOMOJI в screen.js) */
-#loading .kao{width:96px;height:96px;border:1px solid var(--ink);border-radius:50%;display:grid;place-items:center;font-size:22px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+#loading .kao{width:288px;height:288px;border:1px solid var(--ink);border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:66px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
 #hints{z-index:3}
   /* подсказки: полупрозрачный белый кружок с прозрачным плюсом, наведение — плашка над ним */
   #hints { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
@@ -97,6 +97,8 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
   }
   .hint.on button { pointer-events: auto; }
   .hint button svg { display: block; width: 16px; height: 16px; }
+  .hint button { color: #fff; }
+  .hint.dark button { color: var(--ink); }   /* макушка и детали — тёмные, на светлом фоне сцены */
   .hint:hover button, .hint.open button { transform: scale(1.18); opacity: 1; }
   .hint-label {
     position: absolute; left: var(--dx, 0px); bottom: 14px; transform: translateX(-50%);

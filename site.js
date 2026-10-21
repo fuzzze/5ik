@@ -20,7 +20,7 @@ export const SITE_TEXT = {
     st_write: 'Записываю… {p}%',
     st_done: 'Готово. Если экран не включился — нажмите RST. Устройство поднимет точку доступа blin_XXXXXX: подключитесь к ней и настройте Wi-Fi (QR-код — на экране).',
     st_fail: 'Не получилось: {e}. Проверьте, что плата в режиме загрузки (0 + RST), и попробуйте ещё раз.',
-    fw: 'Скачать прошивку', models: 'Модели корпуса', docs: 'Документация',
+    fw: 'Скачать прошивку', models: 'Модели корпуса', docs: 'Документация', admin: 'Демо админки',
     fw_ver: 'Последняя версия:', fw_dl: 'Скачать firmware.bin',
     fw_note: 'Установка: админка устройства → «Обновление прошивки» → «Загрузить файл прошивки .bin». С включённым автообновлением устройство поставит её само.',
     models_note: 'Весь корпус печатается из PETG: шарниры кнопки-дна и пальцы защёлок гнутся. STL уже в положении для печати. Передняя панель — стыком на стол, лицом вверх; поддержки нужны только внутри, под крышей и штифтами. Задняя часть — задней стенкой на стол, с поддержками под полкой.',
@@ -47,7 +47,7 @@ export const SITE_TEXT = {
     st_write: 'Writing… {p}%',
     st_done: 'Done. If the screen stays dark, press RST. The device starts a blin_XXXXXX access point: connect to it and set up Wi-Fi (QR code on the screen).',
     st_fail: 'Failed: {e}. Make sure the board is in download mode (0 + RST) and try again.',
-    fw: 'Download firmware', models: 'Enclosure models', docs: 'Documentation',
+    fw: 'Download firmware', models: 'Enclosure models', docs: 'Documentation', admin: 'Admin demo',
     fw_ver: 'Latest version:', fw_dl: 'Download firmware.bin',
     fw_note: 'To install: device admin → “Firmware update” → “Upload firmware file .bin”. With auto-update on, the device installs it by itself.',
     models_note: 'Print the whole enclosure in PETG: the hinges of the bottom button and the snap fingers flex. The STLs are already oriented for printing. Print the front panel seam-down, face up; supports are needed only inside, under the roof and the pegs. Print the back back-down, with supports under the ledge.',
@@ -74,7 +74,7 @@ export const SITE_TEXT = {
     st_write: 'Schreibe… {p} %',
     st_done: 'Fertig. Bleibt der Bildschirm dunkel, RST drücken. Das Gerät startet den Zugangspunkt blin_XXXXXX: verbinden und WLAN einrichten (QR-Code auf dem Bildschirm).',
     st_fail: 'Fehlgeschlagen: {e}. Prüfen, ob die Platine im Download-Modus ist (0 + RST), und erneut versuchen.',
-    fw: 'Firmware herunterladen', models: 'Gehäusemodelle', docs: 'Dokumentation',
+    fw: 'Firmware herunterladen', models: 'Gehäusemodelle', docs: 'Dokumentation', admin: 'Admin-Demo',
     fw_ver: 'Neueste Version:', fw_dl: 'firmware.bin herunterladen',
     fw_note: 'Installation: Geräte-Admin → „Firmware-Update“ → „Firmware-Datei .bin hochladen“. Mit Auto-Update installiert das Gerät sie selbst.',
     models_note: 'Das ganze Gehäuse aus PETG drucken: die Scharniere der Bodentaste und die Rastfinger biegen sich. Die STL-Dateien sind schon druckfertig ausgerichtet. Die Frontblende mit der Fuge nach unten, Front nach oben drucken; Stützen nur innen, unter dem Dach und den Stiften. Das Rückteil mit der Rückwand nach unten, mit Stützen unter der Stufe.',
@@ -101,7 +101,7 @@ export const SITE_TEXT = {
     st_write: 'Écriture… {p} %',
     st_done: 'Terminé. Si l’écran reste noir, appuyez sur RST. L’appareil crée le point d’accès blin_XXXXXX : connectez-vous et configurez le Wi-Fi (QR code à l’écran).',
     st_fail: 'Échec : {e}. Vérifiez que la carte est en mode téléchargement (0 + RST) et réessayez.',
-    fw: 'Télécharger le firmware', models: 'Modèles du boîtier', docs: 'Documentation',
+    fw: 'Télécharger le firmware', models: 'Modèles du boîtier', docs: 'Documentation', admin: 'Démo admin',
     fw_ver: 'Dernière version :', fw_dl: 'Télécharger firmware.bin',
     fw_note: 'Installation : admin de l’appareil → « Mise à jour du firmware » → « Envoyer le fichier .bin ». Avec la mise à jour auto, l’appareil l’installe tout seul.',
     models_note: 'Tout le boîtier s’imprime en PETG : les charnières du bouton du fond et les doigts des clips fléchissent. Les STL sont déjà orientés pour l’impression. La façade s’imprime joint en bas, face en haut ; supports uniquement à l’intérieur, sous le toit et les ergots. L’arrière s’imprime dos en bas, avec supports sous le rebord.',
@@ -128,7 +128,7 @@ export const SITE_TEXT = {
     st_write: 'Escribiendo… {p} %',
     st_done: 'Listo. Si la pantalla sigue apagada, pulsa RST. El dispositivo crea el punto de acceso blin_XXXXXX: conéctate y configura el Wi-Fi (código QR en la pantalla).',
     st_fail: 'Error: {e}. Comprueba que la placa está en modo de descarga (0 + RST) e inténtalo de nuevo.',
-    fw: 'Descargar firmware', models: 'Modelos de la carcasa', docs: 'Documentación',
+    fw: 'Descargar firmware', models: 'Modelos de la carcasa', docs: 'Documentación', admin: 'Demo del panel',
     fw_ver: 'Última versión:', fw_dl: 'Descargar firmware.bin',
     fw_note: 'Instalación: admin del dispositivo → «Actualización del firmware» → «Subir archivo .bin». Con la actualización automática, el dispositivo la instala solo.',
     models_note: 'Toda la carcasa se imprime en PETG: las bisagras del botón inferior y los dedos de los clips se flexionan. Los STL ya están orientados para imprimir. El panel frontal se imprime con la junta abajo y la cara arriba; soportes solo por dentro, bajo el techo y los pernos. La parte trasera, con la tapa trasera abajo y soportes bajo el escalón.',
@@ -155,7 +155,7 @@ export const SITE_TEXT = {
     st_write: 'Gravando… {p}%',
     st_done: 'Pronto. Se a tela continuar apagada, aperte RST. O dispositivo cria o ponto de acesso blin_XXXXXX: conecte-se a ele e configure o Wi-Fi (código QR na tela).',
     st_fail: 'Falhou: {e}. Verifique se a placa está no modo de download (0 + RST) e tente de novo.',
-    fw: 'Baixar firmware', models: 'Modelos do gabinete', docs: 'Documentação',
+    fw: 'Baixar firmware', models: 'Modelos do gabinete', docs: 'Documentação', admin: 'Demo do painel',
     fw_ver: 'Última versão:', fw_dl: 'Baixar firmware.bin',
     fw_note: 'Instalação: admin do dispositivo → «Atualização de firmware» → «Enviar arquivo .bin». Com a atualização automática, o dispositivo a instala sozinho.',
     models_note: 'Todo o gabinete é impresso em PETG: as dobradiças do botão inferior e os dedos dos encaixes flexionam. Os STL já estão orientados para impressão. Imprima o painel frontal com a junta para baixo e a face para cima; suportes só por dentro, sob o teto e os pinos. A parte traseira, com o fundo para baixo e suportes sob o degrau.',
@@ -176,11 +176,15 @@ export function applySiteLang(l) {
   const T = SITE_TEXT[l] || SITE_TEXT.en;
   for (const el of document.querySelectorAll('[data-t]')) el.textContent = T[el.dataset.t];
   document.querySelector('#loading .kao')?.setAttribute('aria-label', T.loading);   // прелоадер — каомодзи, текст для скринридера
+  document.getElementById('admin-link')?.setAttribute('href', 'admin/#lang=' + l);   // демо админки — на том же языке
   document.dispatchEvent(new Event('blin-lang'));
 }
 
 fetch('ota/manifest.json', { cache: 'no-cache' }).then(r => r.json())
-  .then(m => { document.getElementById('fw-ver').textContent = m.version; })
+  .then(m => {
+    document.getElementById('fw-ver').textContent = m.version;
+    document.getElementById('ftr-ver').textContent = 'v' + m.version;
+  })
   .catch(() => {});
 
 // #modal=fw|flash|models — открыть страницу сразу с модалкой (ссылка на документацию и т.п.)

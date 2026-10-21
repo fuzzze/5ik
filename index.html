@@ -32,7 +32,7 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 .btn-outline:hover{background:#dcdcdc}
 .btn-wide{width:100%;display:block;text-align:center}
 .ftr{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:24px;padding:25px max(100px,calc((100% - 1720px)/2)) 0;font-size:14px}
-.ftr-tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex-shrink:0;width:630px}
+.ftr-tools{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;flex-shrink:0;width:840px}
 .ftr-tools .btn-outline{padding:6px 10px;height:auto;min-height:40px;white-space:normal;font-size:13px;line-height:1.2;text-align:center}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:100}
 .modal.show{display:flex}
@@ -77,6 +77,7 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 #lang button:hover{color:var(--ink)}
 #lang button[aria-pressed="true"]{color:var(--ink);background:#fff;font-weight:700}
 .ftr{justify-content:flex-start}   /* кнопки — от левого края карточки */
+.ftr-ver{margin-left:auto;color:var(--mute);font-size:13px;white-space:nowrap}   /* версия прошивки — у правого края карточки */
 .ftr-tools a.btn-outline{display:flex;align-items:center;justify-content:center;text-decoration:none}
 .modal-box a.btn-save,.modal-box a.btn-outline{display:flex;align-items:center;justify-content:center;text-decoration:none}
 .modal-body p+p{margin-top:10px}
@@ -109,7 +110,7 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
   }
   .hint:hover .hint-label, .hint.open .hint-label { opacity: 1; }
   @media (prefers-reduced-motion: reduce) { .hint, .hint button, .hint-label { transition: none; } }
-@media (max-width:1280px){.page{padding-bottom:24px}.ftr-tools{width:auto}}
+@media (max-width:1280px){.page{padding-bottom:24px}.ftr-tools{width:auto}.ftr-ver{margin-left:0;text-align:right}}
 </style>
 <script type="importmap">
 { "imports": {
@@ -143,7 +144,9 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 <button class="btn-outline" onclick="openModal('modal-fw')" data-t="fw">Скачать прошивку</button>
 <button class="btn-outline" onclick="openModal('modal-models')" data-t="models">Модели корпуса</button>
 <a class="btn-outline" href="docs/" data-t="docs">Документация</a>
+<a class="btn-outline" href="admin/" id="admin-link" data-t="admin">Демо админки</a>
 </div>
+<div class="ftr-ver" id="ftr-ver"></div>
 </footer>
 </div>
 <div class="modal" id="modal-fw" onclick="if(event.target===this)this.classList.remove('show')">

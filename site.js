@@ -175,8 +175,7 @@ export function applySiteLang(l) {
   lang = l;
   const T = SITE_TEXT[l] || SITE_TEXT.en;
   for (const el of document.querySelectorAll('[data-t]')) el.textContent = T[el.dataset.t];
-  const ld = document.getElementById('loading');
-  if (ld && !ld.dataset.err) ld.textContent = T.loading;
+  document.querySelector('#loading .kao')?.setAttribute('aria-label', T.loading);   // прелоадер — каомодзи, текст для скринридера
   document.dispatchEvent(new Event('blin-lang'));
 }
 

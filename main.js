@@ -95,7 +95,8 @@ function setLang(l) {
   lang = l;
 }
 // ─── подсказки ──────────────────────────────────────────────────────────────
-// Строго спереди — пять к информации на экране (как жать макушку, показывает рука — ниже). Полностью разобрано — по одной на каждую из 5 деталей.
+// Строго спереди — пять к информации на экране (как жать макушку, показывает рука — ниже).
+// Полностью разобрано — зелёная рамка вокруг детали под курсором (касанием — по тапу) и плашка под ней.
 // Точки — в мм модели; у экранных — пиксели экрана 240×240 (координаты ui_init()).
 const hints = new Hints(document.getElementById('hints'));
 let modelRoot = null;
@@ -113,10 +114,7 @@ function screenPoint(px, py) {
 }
 // кружки — у края элемента, чтобы не закрывать саму информацию
 const SCREEN_HINTS = { temp: [182, 76], min: [36, 141], max: [204, 141], icons: [176, 51], chart: [176, 157] };
-// у деталей разобранной схемы — под нижней точкой детали на экране, с отступом (см. partEdge)
-const PART_HINTS = ['front', 'display', 's2', 'buzzer', 'back'];
 for (const [id, [px, py]] of Object.entries(SCREEN_HINTS)) hints.add(id, () => screenPoint(px, py));
-for (const g of PART_HINTS) hints.add(g, () => partEdge(g, -1), null, true);
 // обучение кликам: после 1×, 2×, 3× — плашка у точки нажатия, что сделал клик и что попробовать
 // дальше. Висит TIP_TIME или до следующего клика; после тройного обучение закончено.
 const TIP_TIME = 6;   // с
@@ -135,39 +133,35 @@ function showTip(n) {
   if (n === 3) tipsDone = true;
 }
 
-// Точка у края детали на экране: проекция её вершин (выборка — до HINT_SAMPLE на группу),
-// по центру по горизонтали, на HINT_GAP px ниже нижней (side −1) или выше верхней (side 1)
-// точки; глубина — центра детали.
-const HINT_GAP = 18, HINT_SAMPLE = 600;   // px от края детали до центра кружка (16 px)
-const partBox = new THREE.Box3(), partV = new THREE.Vector3(), partC = new THREE.Vector3();
-const partPts = new Map();   // группа → [[сетка, Float32Array локальных точек]]
-function partSamples(group) {
-  if (!partPts.has(group)) {
-    const mine = parts.filter(p => p.group === group);
-    partPts.set(group, mine.map(p => {
-      const pos = p.obj.geometry.attributes.position, n = pos.count;
-      const step = Math.max(1, Math.floor(n * mine.length / HINT_SAMPLE));
-      const a = [];
-      for (let i = 0; i < n; i += step) a.push(pos.getX(i), pos.getY(i), pos.getZ(i));
-      return [p.obj, new Float32Array(a)];
-    }));
-  }
-  return partPts.get(group);
-}
-function partEdge(group, side) {
+// Рамка детали на экране: проекция всех её вершин (самая крупная деталь — ~5 тыс.), в px карточки,
+// с отступом FRAME_PAD. Считается каждый кадр — деталь едет при разборке и вращении.
+const FRAME_PAD = 10;
+const partBox = new THREE.Box3(), partV = new THREE.Vector3();
+function partRect(group) {
   partBox.makeEmpty();
-  partC.set(0, 0, 0);
-  let n = 0;
-  for (const [obj, a] of partSamples(group)) {
-    for (let i = 0; i < a.length; i += 3) {
-      partV.set(a[i], a[i + 1], a[i + 2]).applyMatrix4(obj.matrixWorld);
-      partC.add(partV); n++;
-      partBox.expandByPoint(partV.project(camera));
+  for (const p of parts) {
+    if (p.group !== group) continue;
+    const pos = p.obj.geometry.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      partBox.expandByPoint(partV.fromBufferAttribute(pos, i).applyMatrix4(p.obj.matrixWorld).project(camera));
     }
   }
-  const z = partC.divideScalar(Math.max(n, 1)).project(camera).z;
-  const y = side > 0 ? partBox.max.y + 2 * HINT_GAP / stageH() : partBox.min.y - 2 * HINT_GAP / stageH();
-  return partV.set((partBox.min.x + partBox.max.x) / 2, y, z).unproject(camera);
+  const W = stageW(), H = stageH();
+  return {
+    x0: (partBox.min.x + 1) / 2 * W - FRAME_PAD, x1: (partBox.max.x + 1) / 2 * W + FRAME_PAD,
+    y0: (1 - partBox.max.y) / 2 * H - FRAME_PAD, y1: (1 - partBox.min.y) / 2 * H + FRAME_PAD,
+  };
+}
+// Деталь под указателем: ближайшее пересечение луча — передняя деталь заслоняет заднюю.
+// Мышь — по наведению (луч пересчитывается каждый кадр: детали едут и под неподвижным курсором),
+// касание — тапом по детали, тап мимо — снять.
+let pointerXY = null, tappedPart = null;
+function partAt(x, y) {
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set((x - r.left) / r.width * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hit = ray.intersectObjects(parts.map(p => p.obj), false)[0];
+  return hit ? parts.find(p => p.obj === hit.object).group : null;
 }
 
 const FRONTAL = Math.cos(THREE.MathUtils.degToRad(8));   // «строго спереди» — в пределах 8°
@@ -179,8 +173,10 @@ function updateHints() {
   const frontal = camDir.subVectors(camera.position, controls.target).normalize().z > FRONTAL;
   if (assembled && frontal) Object.keys(SCREEN_HINTS).forEach(id => show.add(id));
   if (assembled && performance.now() / 1000 < tipUntil) show.add('tip');
-  if (exploded) PART_HINTS.forEach(id => show.add(id));
   hints.update(camera, show, stageW(), stageH());
+  if (!exploded) tappedPart = null;
+  const part = !exploded ? null : pointerXY ? partAt(...pointerXY) : tappedPart;
+  hints.showFrame(part, part && partRect(part), stageW(), stageH());
 }
 
 let lang = hash.get('lang') || 'ru';   // по умолчанию русский, другой — кнопками в шапке или #lang=
@@ -314,10 +310,11 @@ function hitTop(ev) {
 }
 
 renderer.domElement.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; interacted(); });
-renderer.domElement.addEventListener('pointerleave', () => { hoverTop = false; });
+renderer.domElement.addEventListener('pointerleave', () => { hoverTop = false; pointerXY = null; });
 renderer.domElement.addEventListener('pointerup', e => {
   if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;  // это было вращение
   down = null;
+  if (e.pointerType !== 'mouse' && t > 0.97) tappedPart = partAt(e.clientX, e.clientY);
   if (!screen || !hitTop(e)) return;
   pressTop();
 });
@@ -364,6 +361,7 @@ function buzz(freq, ms) {
   } catch { /* без звука — не страшно */ }
 }
 renderer.domElement.addEventListener('pointermove', e => {
+  pointerXY = e.pointerType === 'mouse' && !e.buttons ? [e.clientX, e.clientY] : null;
   if (e.buttons) return;
   hoverTop = !!screen && e.pointerType === 'mouse' && hitTop(e);
   renderer.domElement.style.cursor = hoverTop ? 'pointer' : '';

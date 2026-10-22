@@ -9,6 +9,7 @@ import { BlinScreen, LANGS, loadFont } from './screen.js';
 import { buildProps, setResolution, updateProps } from './props.js';
 import { Hints } from './hints.js';
 import { Hand } from './hand.js';
+import { PartOutline } from './outline.js';
 import { applySiteLang, LANG_NAMES } from './site.js';
 import './flash.js';
 import { applyFinish } from './finish.js';
@@ -96,7 +97,7 @@ function setLang(l) {
 }
 // ─── подсказки ──────────────────────────────────────────────────────────────
 // Строго спереди — пять к информации на экране (как жать макушку, показывает рука — ниже).
-// Полностью разобрано — зелёная рамка вокруг детали под курсором (касанием — по тапу) и плашка под ней.
+// Полностью разобрано — зелёная обводка по контуру детали под курсором (касанием — по тапу) и плашка под ней.
 // Точки — в мм модели; у экранных — пиксели экрана 240×240 (координаты ui_init()).
 const hints = new Hints(document.getElementById('hints'));
 let modelRoot = null;
@@ -134,8 +135,13 @@ function showTip(n) {
 }
 
 // Рамка детали на экране: проекция всех её вершин (самая крупная деталь — ~5 тыс.), в px карточки,
-// с отступом FRAME_PAD. Считается каждый кадр — деталь едет при разборке и вращении.
+// с отступом FRAME_PAD (до внешнего края обводки). Считается каждый кадр — деталь едет при
+// разборке и вращении. По ней — плашка и прямоугольник расчёта обводки (outline.js).
 const FRAME_PAD = 10;
+// у каждой детали свой слой: обводка рисует силуэт только её
+const PART_LAYER = { front: 1, display: 2, s2: 3, buzzer: 4, back: 5 };
+const outline = new PartOutline();
+outline.resize(stageW(), stageH());
 const partBox = new THREE.Box3(), partV = new THREE.Vector3();
 function partRect(group) {
   partBox.makeEmpty();
@@ -176,7 +182,9 @@ function updateHints() {
   hints.update(camera, show, stageW(), stageH());
   if (!exploded) tappedPart = null;
   const part = !exploded ? null : pointerXY ? partAt(...pointerXY) : tappedPart;
-  hints.showFrame(part, part && partRect(part), stageW(), stageH());
+  const rect = part && partRect(part);
+  outline.update(renderer, scene, camera, part ? PART_LAYER[part] : null, rect);
+  hints.showFrame(part, rect, stageW(), stageH());
 }
 
 let lang = hash.get('lang') || 'ru';   // по умолчанию русский, другой — кнопками в шапке или #lang=
@@ -222,6 +230,7 @@ Promise.all([
     const name = o.name || o.parent.name;
     const group = name === 'screen' ? 'display' : name.split('__')[0];
     parts.push({ obj: o, group, base: o.position.z });
+    o.layers.enable(PART_LAYER[group]);
     if (name === 'screen') {
       // экран светится сам: без освещения и тон-маппинга — цвета как на устройстве
       o.material = new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false });
@@ -537,6 +546,7 @@ function frame() {
     screenTex.needsUpdate = true;
   }
   renderer.render(scene, camera);
+  outline.render(renderer);
   requestAnimationFrame(frame);
 }
 frame();
@@ -544,6 +554,7 @@ frame();
 new ResizeObserver(() => {
   const w = stageW(), h = stageH();
   setResolution(w, h);
+  outline.resize(w, h);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);

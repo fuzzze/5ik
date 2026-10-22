@@ -1,6 +1,6 @@
 // Подсказки поверх сцены: белый кружок с прозрачным плюсом, привязанный к точке
 // модели. Наведение (или касание) — кружок чуть растёт, рядом плашка с текстом.
-// У деталей разобранной схемы вместо кружков — зелёная рамка вокруг детали под курсором.
+// У деталей разобранной схемы вместо кружков — обводка детали под курсором (outline.js) и плашка.
 // Положение пересчитывается каждый кадр проекцией точки на экран.
 import * as THREE from 'three';
 
@@ -83,30 +83,23 @@ export class Hints {
     this.items = new Map();   // id → { el, label, pos: () => Vector3 мира }
     this.v = new THREE.Vector3();
     root.addEventListener('pointerdown', e => e.stopPropagation());
-    // рамка вокруг детали разобранной схемы и плашка под ней (см. showFrame)
-    this.frame = document.createElement('div');
-    this.frame.className = 'pframe';
+    // плашка под деталью разобранной схемы (см. showFrame; обводку рисует outline.js)
     this.frameLabel = document.createElement('span');
     this.frameLabel.className = 'pframe-label';
-    root.append(this.frame, this.frameLabel);
+    root.append(this.frameLabel);
     this.frameKey = null;
   }
 
-  // Рамка вокруг детали: key — ключ текста (null — спрятать), r — {x0, y0, x1, y1} в px карточки
-  // (уже с отступом). Плашка — под рамкой по центру, в пределах карточки; не влезает снизу — над рамкой.
+  // Плашка детали: key — ключ текста (null — спрятать), r — рамка детали {x0, y0, x1, y1} в px карточки
+  // (уже с отступом под обводку). Плашка — под рамкой по центру, в пределах карточки; не влезает снизу — над рамкой.
   showFrame(key, r, W, H) {
     const on = key !== null;
-    this.frame.classList.toggle('on', on);
     this.frameLabel.classList.toggle('on', on);
     if (!on) return;
     if (key !== this.frameKey) {
       this.frameKey = key;
       this.frameLabel.textContent = (this.T || HINT_TEXT.ru)[key];
     }
-    const f = this.frame.style;
-    f.transform = `translate(${r.x0.toFixed(1)}px, ${r.y0.toFixed(1)}px)`;
-    f.width = `${(r.x1 - r.x0).toFixed(1)}px`;
-    f.height = `${(r.y1 - r.y0).toFixed(1)}px`;
     const w = this.frameLabel.offsetWidth, h = this.frameLabel.offsetHeight, m = 16, gap = 8;
     const x = Math.max(m, Math.min(W - m - w, (r.x0 + r.x1) / 2 - w / 2));
     const y = r.y1 + gap + h <= H - m ? r.y1 + gap : Math.max(m, r.y0 - gap - h);

@@ -90,8 +90,9 @@ export class Hints {
     this.frameKey = null;
   }
 
-  // Плашка детали: key — ключ текста (null — спрятать), r — рамка детали {x0, y0, x1, y1} в px карточки
-  // (уже с отступом под обводку). Плашка — под рамкой по центру, в пределах карточки; не влезает снизу — над рамкой.
+  // Плашка детали: key — ключ текста (null — спрятать), r — рамка детали {x0, y0, x1, y1} в px карточки.
+  // Плашка — на самой детали: по центру по горизонтали, по вертикали — на LABEL_Y высоты рамки
+  // (между серединой и низом), в пределах карточки.
   showFrame(key, r, W, H) {
     const on = key !== null;
     this.frameLabel.classList.toggle('on', on);
@@ -100,9 +101,9 @@ export class Hints {
       this.frameKey = key;
       this.frameLabel.textContent = (this.T || HINT_TEXT.ru)[key];
     }
-    const w = this.frameLabel.offsetWidth, h = this.frameLabel.offsetHeight, m = 16, gap = 8;
+    const w = this.frameLabel.offsetWidth, h = this.frameLabel.offsetHeight, m = 16, LABEL_Y = 0.65;
     const x = Math.max(m, Math.min(W - m - w, (r.x0 + r.x1) / 2 - w / 2));
-    const y = r.y1 + gap + h <= H - m ? r.y1 + gap : Math.max(m, r.y0 - gap - h);
+    const y = Math.max(m, Math.min(H - m - h, r.y0 + (r.y1 - r.y0) * LABEL_Y - h / 2));
     this.frameLabel.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
   }
 

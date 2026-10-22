@@ -1,21 +1,20 @@
-// Обводка детали разобранной схемы по внешнему контуру: линия на отступе GAP от силуэта
-// и мягкое зелёное свечение вокруг неё.
+// Обводка детали разобранной схемы по внешнему контуру: чёрная линия на отступе GAP от силуэта,
+// толщиной как штрих второстепенных объектов (STROKE из props.js).
 //
 // Каждый кадр: силуэт детали (её слой, белый материал) рисуется в рендер-таргет размером
 // со сцену в CSS px → в прямоугольнике детали читается на CPU → внутренние дыры заливаются
 // (заливка снаружи от краёв: обводим только внешний контур, кольцо крышки — без линии
 // внутри) → поле расстояний до силуэта (точное евклидово, Felzenszwalb) → текстура.
-// Линию и свечение рисует шейдер поверх сцены по этому полю: отступ ровный в пикселях
+// Линию рисует шейдер поверх сцены по этому полю: отступ ровный в пикселях
 // экрана при любом ракурсе и масштабе.
 import * as THREE from 'three';
+import { STROKE } from './props.js';
 
 const GAP = 18;       // px от силуэта до линии
-const WIDTH = 3;      // px — толщина линии
-const GLOW = 9;       // px — «радиус» свечения (гаусс)
-const GLOW_A = 0.4;   // непрозрачность свечения у линии
-const AA = 1.0;       // px — полуширина сглаживания края линии
-const D_MAX = 64;     // px — потолок поля расстояний (байт 255)
-const MARGIN = GAP + WIDTH + 3 * GLOW;   // px — запас вокруг детали при расчёте поля
+const WIDTH = STROKE; // px — толщина линии
+const AA = 0.6;       // px — полуширина сглаживания края линии
+const D_MAX = 32;     // px — потолок поля расстояний (байт 255)
+const MARGIN = GAP + WIDTH + 4;   // px — запас вокруг детали при расчёте поля
 
 const VERT = 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
 const FRAG = `
@@ -25,16 +24,15 @@ const FRAG = `
     float d = texture2D(tDist, vUv).r * ${D_MAX.toFixed(1)};
     float c = ${(GAP + WIDTH / 2).toFixed(1)};
     float line = 1.0 - smoothstep(${(WIDTH / 2 - AA).toFixed(2)}, ${(WIDTH / 2 + AA).toFixed(2)}, abs(d - c));
-    float k = (d - c) / ${GLOW.toFixed(1)};
-    float glow = ${GLOW_A.toFixed(2)} * exp(-k * k) * smoothstep(0.0, 2.0, d);   // на саму деталь не заходит
-    float a = max(line, glow) * opacity;
+    float a = line * opacity;
     gl_FragColor = vec4(color, a);
   }`;
 
 // цвет из CSS-переменной как есть (#rrggbb): шейдер пишет его в канвас без перевода в линейное
 function cssColor(name) {
   const hex = getComputedStyle(document.documentElement).getPropertyValue(name).trim().replace('#', '');
-  const n = parseInt(hex.length === 3 ? hex.replace(/./g, '$&$&') : hex, 16) || 0x00c853;
+  const n = parseInt(hex.length === 3 ? hex.replace(/./g, '$&$&') : hex, 16);   // #000 → 0, не «пусто»
+  if (Number.isNaN(n)) return new THREE.Vector3(0, 0, 0);
   return new THREE.Vector3((n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255);
 }
 
@@ -62,7 +60,7 @@ export class PartOutline {
     this.maskMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
     this.mat = new THREE.ShaderMaterial({
       vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthTest: false, depthWrite: false,
-      uniforms: { tDist: { value: null }, color: { value: cssColor('--c-normal') }, opacity: { value: 0 } },
+      uniforms: { tDist: { value: null }, color: { value: cssColor('--ink') }, opacity: { value: 0 } },
     });
     this.mat.toneMapped = false;
     this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.mat);

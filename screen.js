@@ -1,6 +1,6 @@
 // Живой экран Blin для демки: рисуется на canvas и уходит в three.js текстурой.
 // Геометрия, цвета, звёзды и 80s-глитчи повторяют src/main.cpp — правишь отрисовку
-// экрана в прошивке, правь и здесь (и в brag-output/work/blin_screen.py, fx.py).
+// экрана в прошивке, правь и здесь.
 // Координаты — в пикселях устройства (240×240), рисуется в SS раз крупнее.
 
 const SS = 2;
@@ -32,6 +32,32 @@ const LABELS = {
 function rng(seed) {
   let s = seed >>> 0 || 1;
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+}
+
+// ★ «Главный экран» — глиф font_star16 из tools/gen_star_font.py: та же геометрия (px)
+const STAR = { r: 4.960, k: 0.47, w: 11, h: 10, ofs: 1, cy: 5.874, adv: 12 };   // строка, которую печатает генератор
+// ▲/▼ динамики — tools/gen_trend_icon.py (12×10): у правого края числа, середина — на
+// середине цифр (2 px выше центра лейбла 64 px), отступ 12 px, серый; на центровку числа не влияет
+const TREND = { w: 12, h: 10, gap: 12 };
+function drawTrend(g, x, midY, up, color) {
+  const t = midY - TREND.h / 2;
+  g.beginPath();
+  if (up) { g.moveTo(x, t + TREND.h); g.lineTo(x + TREND.w / 2, t); g.lineTo(x + TREND.w, t + TREND.h); }
+  else { g.moveTo(x, t); g.lineTo(x + TREND.w / 2, t + TREND.h); g.lineTo(x + TREND.w, t); }
+  g.closePath();
+  g.fillStyle = color;
+  g.fill();
+}
+
+function drawStar(g, x, top, color) {     // x, top — левый верхний угол рамки глифа
+  g.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? STAR.r * STAR.k : STAR.r;
+    g.lineTo(x + STAR.w / 2 + r * Math.cos(a), top + STAR.cy + r * Math.sin(a));
+  }
+  g.closePath();
+  g.fillStyle = color;
+  g.fill();
 }
 
 export class BlinScreen {
@@ -244,11 +270,24 @@ export class BlinScreen {
     const vals = s.hist.filter((h, k) => h != null && !((s.gap >> k) & 1)).concat([s.temp]);
     const f1 = v => v.toFixed(1);
     // главное число: LV_ALIGN_CENTER, 0, -15 → середина строки на y=105
-    this.text(g, this.kaomoji(now) ?? f1(s.temp), 64, 120, 105 - 39, 'center', this.c.fg);
+    const kao = this.kaomoji(now);
+    this.text(g, kao ?? f1(s.temp), 64, 120, 105 - 39, 'center', this.c.fg);
+    if (!kao && s.trend) {
+      g.font = `64px ${FONT}`;
+      const w = g.measureText(f1(s.temp)).width;
+      drawTrend(g, 120 + w / 2 + TREND.gap, 105 - 2, s.trend > 0, GRAY);
+    }
     this.text(g, f1(Math.min(...vals)), 16, 16, 152, 'left', GRAY);
     this.text(g, f1(Math.max(...vals)), 16, 224, 152, 'right', GRAY);
     const label = LABELS[s.label]?.[this.lang] ?? s.label;
-    this.text(g, label, 16, 120, 176, 'center', s.stale ? this.c.warn : this.c.fg);
+    const col = s.stale ? this.c.warn : this.c.fg;
+    if (this.count > 1 && this.idx === this.d.main) {
+      // главный экран: «название ★», строка по центру, как лейбл LVGL (ui_label_set_screen_name)
+      g.font = `16px ${FONT}`;
+      const w = g.measureText(label + ' ').width, x0 = 120 - (w + STAR.adv) / 2, base = 176 + Math.round(16 * 0.95);
+      this.text(g, label, 16, x0, 176, 'left', col);
+      drawStar(g, x0 + w, base - STAR.ofs - STAR.h, col);
+    } else this.text(g, label, 16, 120, 176, 'center', col);
   }
 
   drawChart(g, s) {

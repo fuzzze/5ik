@@ -38,7 +38,8 @@
    ],
    "gap": 0,
    "extra": "heater_on",
-   "stale": false
+   "stale": false,
+   "trend": -1
   },
   {
    "label": "outside",
@@ -77,7 +78,8 @@
    ],
    "gap": 0,
    "extra": "none",
-   "stale": false
+   "stale": false,
+   "trend": -1
   },
   {
    "label": "garden",
@@ -116,7 +118,8 @@
    ],
    "gap": 0,
    "extra": "none",
-   "stale": false
+   "stale": false,
+   "trend": -1
   },
   {
    "label": "home",
@@ -155,7 +158,8 @@
    ],
    "gap": 0,
    "extra": "none",
-   "stale": false
+   "stale": false,
+   "trend": 1
   },
   {
    "label": "small",
@@ -194,7 +198,8 @@
    ],
    "gap": 0,
    "extra": "cooler_off",
-   "stale": false
+   "stale": false,
+   "trend": -1
   }
  ],
  "fx": {

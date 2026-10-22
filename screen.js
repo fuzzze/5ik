@@ -325,7 +325,10 @@ export class BlinScreen {
   drawDots(g) {
     const n = this.count, total = n * 6 + (n - 1) * 4, x0 = 120 - Math.trunc(total / 2);
     this.d.screens.forEach((s, i) => {
-      g.fillStyle = i === this.idx ? this.c.fg : s.stale ? this.c.warn : GRAY;
+      // фоновый экран за порогом оповещения (alarm из /api) мигает цветом зоны — как dot_blink_cb
+      const alarm = i !== this.idx && !s.stale && s.alarm;
+      if (alarm && performance.now() % 1000 >= 500) return;
+      g.fillStyle = i === this.idx ? this.c.fg : s.stale ? this.c.warn : alarm ? (alarm > 0 ? this.c.hot : this.c.cold) : GRAY;
       g.beginPath();
       g.arc(x0 + i * 10 + 3, 204, 3, 0, 2 * Math.PI);
       g.fill();

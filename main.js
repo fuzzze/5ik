@@ -83,6 +83,8 @@ const parts = [];          // { obj, group, base }
 let explode = {};
 let screen = null;          // BlinScreen: живой экран на canvas
 let screenTex = null;
+let screenMat = null;       // материал экрана: гаснет, когда экран отделяется от платы (см. screenPower)
+let screenOn = 1;
 
 // #explode, #lang=de, #explode&lang=de — параметры в hash (query до артефакта не доходит)
 const hash = new URLSearchParams(location.hash.slice(1));
@@ -232,7 +234,7 @@ Promise.all([
     o.layers.enable(PART_LAYER[group]);
     if (name === 'screen') {
       // экран светится сам: без освещения и тон-маппинга — цвета как на устройстве
-      o.material = new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false });
+      o.material = screenMat = new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false });
       o.receiveShadow = false;
     }
   });
@@ -397,6 +399,15 @@ function explodeOffset(group, t) {
   return z;
 }
 
+// Экран отделился от платы (начался второй этап разборки) — питания нет, экран гаснет в чёрный;
+// при сборке, как только этап отыгран назад, загорается снова. Затухание — несколько кадров.
+const SCREEN_OFF_T = 1 / (stageTargets({}).length - 1);   // начало второго этапа
+function screenPower() {
+  if (!screenMat) return;
+  screenOn += ((t > SCREEN_OFF_T + 0.005 ? 0 : 1) - screenOn) * 0.3;
+  screenMat.color.setScalar(screenOn);
+}
+
 // ─── кадр ───────────────────────────────────────────────────────────────────
 function pressAngle(now) {
   if (pressT < 0) return 0;
@@ -540,7 +551,8 @@ function frame() {
   fadeProps(now, e);
   updateHand(now, e);
   updateHints();
-  if (screen) {
+  screenPower();
+  if (screen && screenOn > 0.01) {
     screen.draw(performance.now());
     screenTex.needsUpdate = true;
   }

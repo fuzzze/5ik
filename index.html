@@ -140,6 +140,7 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
     opacity: 0; pointer-events: none; transition: opacity .15s;
   }
   .hint:hover .hint-label, .hint.open .hint-label { opacity: 1; }
+  .hint.tip .hint-label { left: 0; top: 0; bottom: auto; transform: none; }   /* обучение кликам: угол — в translate */
   @media (prefers-reduced-motion: reduce) { .hint, .hint button, .hint-label { transition: none; } }
 @media (max-width:1280px){.page{padding-bottom:24px}.ftr-tools{width:auto}.ftr-ver{margin-left:0;text-align:right}}
 </style>

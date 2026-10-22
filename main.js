@@ -117,6 +117,23 @@ const SCREEN_HINTS = { temp: [182, 76], min: [36, 141], max: [204, 141], icons: 
 const PART_HINTS = ['front', 'display', 's2', 'buzzer', 'back'];
 for (const [id, [px, py]] of Object.entries(SCREEN_HINTS)) hints.add(id, () => screenPoint(px, py));
 for (const g of PART_HINTS) hints.add(g, () => partEdge(g, -1), null, true);
+// обучение кликам: после 1×, 2×, 3× — плашка у точки нажатия, что сделал клик и что попробовать
+// дальше. Висит TIP_TIME или до следующего клика; после тройного обучение закончено.
+const TIP_TIME = 6;   // с
+let tipUntil = 0, tipsDone = false;
+const tipV = new THREE.Vector3(), tipW = new THREE.Vector3();
+// плашка — с той стороны от точки нажатия, откуда рука не приходит
+hints.addTip('tip', () => hand.root.parent.localToWorld(tipV.copy(hand.top)), () => {
+  const a = hand.root.parent.localToWorld(tipV.copy(hand.top)).project(camera).x;
+  const b = hand.root.localToWorld(tipW.set(0, 20, 0)).project(camera).x;   // выше по руке
+  return b > a ? -1 : 1;
+});
+function showTip(n) {
+  if (tipsDone) return;
+  hints.setTip('tip', 'tip' + n);
+  tipUntil = performance.now() / 1000 + TIP_TIME;
+  if (n === 3) tipsDone = true;
+}
 
 // Точка у края детали на экране: проекция её вершин (выборка — до HINT_SAMPLE на группу),
 // по центру по горизонтали, на HINT_GAP px ниже нижней (side −1) или выше верхней (side 1)
@@ -161,6 +178,7 @@ function updateHints() {
   const assembled = t < 0.02 && tTarget < 0.02, exploded = t > 0.97;
   const frontal = camDir.subVectors(camera.position, controls.target).normalize().z > FRONTAL;
   if (assembled && frontal) Object.keys(SCREEN_HINTS).forEach(id => show.add(id));
+  if (assembled && performance.now() / 1000 < tipUntil) show.add('tip');
   if (exploded) PART_HINTS.forEach(id => show.add(id));
   hints.update(camera, show, stageW(), stageH());
 }
@@ -239,7 +257,7 @@ let t = tTarget;
 // и покачивание выключается насовсем (OrbitControls продолжают с того же места).
 const SWING = THREE.MathUtils.degToRad(14), SWING_PERIOD = 14, SWING_RAMP = 3;
 let idle = !hash.has('front'), swingPrev = 0, swingT0 = -1;
-function interacted() { idle = false; }
+function interacted() { idle = false; handIntro = false; }
 function swing(now) {
   if (!idle) return;
   if (swingT0 < 0) swingT0 = now;
@@ -296,6 +314,7 @@ function hitTop(ev) {
 }
 
 renderer.domElement.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; interacted(); });
+renderer.domElement.addEventListener('pointerleave', () => { hoverTop = false; });
 renderer.domElement.addEventListener('pointerup', e => {
   if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;  // это было вращение
   down = null;
@@ -317,12 +336,14 @@ const CLICK_GAP = 400;
 let clicks = 0, clickTimer = 0;
 function bootClick() {
   clicks++;
+  tipUntil = 0;                            // прошлая подсказка гаснет, как только жмут снова
   clearTimeout(clickTimer);
   clickTimer = setTimeout(() => {
     const now = performance.now();
     if (clicks === 1) screen.goto(screen.idx + 1, now);
     else if (clicks === 2) buzz(screen.toggleMute() ? 2700 : 3200, 80);
     else { screen.rotate(); buzz(3200, 60); turnDevice(now / 1000); }
+    showTip(Math.min(clicks, 3));
     clicks = 0;
   }, CLICK_GAP);
 }
@@ -344,7 +365,8 @@ function buzz(freq, ms) {
 }
 renderer.domElement.addEventListener('pointermove', e => {
   if (e.buttons) return;
-  renderer.domElement.style.cursor = screen && hitTop(e) ? 'pointer' : '';
+  hoverTop = !!screen && e.pointerType === 'mouse' && hitTop(e);
+  renderer.domElement.style.cursor = hoverTop ? 'pointer' : '';
 });
 
 // ─── поэтапная разборка ─────────────────────────────────────────────────────
@@ -408,7 +430,8 @@ function fadeProps(now, e) {
 
 // ─── рука над макушкой ──────────────────────────────────────────────────────
 // Перчатка с вытянутым пальцем висит над макушкой и покачивается — показывает, куда жать;
-// при нажатии тычет пальцем. Всегда приходит сверху и сбоку под HAND_TILT к нормали: стоя
+// при нажатии тычет пальцем. Видна с самого начала, а после первого касания сцены — только
+// пока курсор над тем, что можно нажать (макушка, дно, сама рука). Всегда приходит сверху и сбоку под HAND_TILT к нормали: стоя
 // и на боку — к макушке, вверх дном — к дну-клавише (оно и щёлкает). Видна в собранном
 // виде; при повороте гаснет и появляется уже на новом месте.
 const HAND_TOP = new THREE.Vector3(0, 21.2, -4);    // макушка, мм модели (ближе к лицу — виднее)
@@ -419,7 +442,7 @@ const handRoot = new THREE.Group();
 handRoot.position.copy(CENTER).negate();
 handRoot.add(hand.root);
 device.add(handRoot);
-let handA = 0, handRot = -1;
+let handA = 0, handRot = -1, handIntro = true, hoverTop = false;
 function placeHand(r) {
   const R = r * Math.PI / 2;                      // поворот корпуса против часовой
   const top = Math.cos(R) > -0.5;                 // макушка смотрит не вниз
@@ -432,7 +455,7 @@ function updateHand(now, e) {
   const r = Math.round(turnTo / (Math.PI / 2)) & 3;
   const settled = turnT0 < 0 || now > turnT0 + TURN_TIME;
   if (r !== handRot && handA < 0.02 && settled) placeHand(r);
-  const want = modelRoot && t < 0.02 && tTarget < 0.02 && r === handRot && settled ? 1 : 0;
+  const want = modelRoot && t < 0.02 && tTarget < 0.02 && r === handRot && settled && (handIntro || hoverTop) ? 1 : 0;
   handA += (want - handA) * 0.08;
   hand.update(now, pressAngle(now) / THREE.MathUtils.degToRad(PRESS_DEG), handA * (1 - e), camera.position);
 }

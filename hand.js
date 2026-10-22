@@ -2,11 +2,12 @@
 // показывает, что макушку можно нажать (клик по ней самой — тоже нажатие). Рисуется тем же
 // штрихом, что реквизит props.js: невидимый заслон в буфер глубины + линии контура.
 //
-// Детали — гладкие параметрические поверхности (ладонь-суперэллипсоид, пальцы-«сардельки»
-// с круглыми концами, отворот манжеты — тело вращения). Контур считается каждый кадр:
-// на каждом треугольнике — отрезок, где n·(камера − p), интерполированное по вершинам,
-// меняет знак (Hertzmann & Zorin) — линия гладкая, без «лесенки» по рёбрам сетки.
-// Места, где палец или манжета входят в ладонь, — заранее посчитанные линии стыка.
+// Рука — одно гладкое тело: поле расстояний (SDF) из кулака-эллипсоида, пальцев-«конусов
+// со скруглёнными концами» по кривым и манжеты, слитых плавным минимумом (smin) — швов между
+// частями нет. Сетка — surface nets по сетке SDF при загрузке, вершины доводятся на поверхность,
+// нормали — градиент поля. Контур считается каждый кадр: на каждом треугольнике — отрезок, где
+// n·(камера − p), интерполированное по вершинам, меняет знак (Hertzmann & Zorin). Складки
+// между поджатыми пальцами — готовые короткие штрихи по поверхности.
 // Единицы — мм модели; рука своя: указательный палец вдоль −Y, кончик в нуле,
 // тыльная сторона ладони — +Z, большой палец — +X (правая рука).
 import * as THREE from 'three';
@@ -20,7 +21,7 @@ const SCALE = 0.5;           // вся рука: ~16 мм от кончика п
 const HOVER = 4.5;           // мм от макушки до кончика пальца в покое
 const BOB = 1.2, BOB_PERIOD = 2.4;   // покачивание: ход по оси пальца, мм, и период, с
 const SWAY = THREE.MathUtils.degToRad(5);
-const YAW = THREE.MathUtils.degToRad(-28);   // поворот к камере: тыл ладони в три четверти
+const YAW = THREE.MathUtils.degToRad(-110);   // поворот к камере: боком, со стороны большого пальца (как на референсе)
 
 // заслон: пишет только глубину. Рисуется раньше корпуса (renderOrder), поэтому за рукой
 // корпус не проступает — перчатка «закрашена» фоном страницы, как белая перчатка в мультфильме
@@ -28,110 +29,144 @@ const occluderMat = new THREE.MeshBasicMaterial({
   colorWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2,
 });
 
-// ─── поверхности ────────────────────────────────────────────────────────────
-// fn(u, v) → точка; u 0..1 — от полюса до полюса, v 0..1 — по кругу (замкнуто)
-function surface(fn, nu, nv) {
-  const pos = [], idx = [], p = new THREE.Vector3();
-  for (let i = 0; i <= nu; i++)
-    for (let j = 0; j < nv; j++) pos.push(...fn(i / nu, j / nv, p).toArray());
-  for (let i = 0; i < nu; i++)
-    for (let j = 0; j < nv; j++) {
-      const a = i * nv + j, b = i * nv + (j + 1) % nv;
-      idx.push(a, b + nv, b, a, a + nv, b + nv);
+// ─── поле расстояний ────────────────────────────────────────────────────────
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+function smin(a, b, k) {                   // плавный минимум (полиномиальный, И. Квилес)
+  const h = Math.max(k - Math.abs(a - b), 0) / k;
+  return Math.min(a, b) - h * h * k / 4;
+}
+const smax = (a, b, k) => -smin(-a, -b, k);
+// конус со сферами на концах (a, ra) — (b, rb)
+function roundCone(p, a, ra, b, rb) {
+  const bx = b.x - a.x, by = b.y - a.y, bz = b.z - a.z, l2 = bx * bx + by * by + bz * bz;
+  const rr = ra - rb, a2 = l2 - rr * rr, il2 = 1 / l2;
+  const px = p.x - a.x, py = p.y - a.y, pz = p.z - a.z;
+  const y = px * bx + py * by + pz * bz, z = y - l2;
+  const qx = px * l2 - bx * y, qy = py * l2 - by * y, qz = pz * l2 - bz * y;
+  const x2 = qx * qx + qy * qy + qz * qz, y2 = y * y * l2, z2 = z * z * l2;
+  const k = Math.sign(rr) * rr * rr * x2;
+  if (Math.sign(z) * a2 * z2 > k) return Math.sqrt(x2 + z2) * il2 - rb;
+  if (Math.sign(y) * a2 * y2 < k) return Math.sqrt(x2 + y2) * il2 - ra;
+  return (Math.sqrt(x2 * a2 * il2) + y * rr) * il2 - ra;
+}
+function ellipsoid(p, c, r) {             // приближённое расстояние (И. Квилес)
+  const x = (p.x - c.x) / r.x, y = (p.y - c.y) / r.y, z = (p.z - c.z) / r.z;
+  const k0 = Math.hypot(x, y, z), k1 = Math.hypot(x / r.x, y / r.y, z / r.z);
+  return k0 * (k0 - 1) / k1;
+}
+// палец — гладкая кривая через опорные точки, радиус меняется от r0 до r1
+function digit(points, r0, r1, n = 8) {
+  const c = new THREE.CatmullRomCurve3(points.map(a => V(...a)));
+  const pts = c.getSpacedPoints(n), rs = pts.map((_, i) => THREE.MathUtils.lerp(r0, r1, i / n));
+  const segs = [];
+  for (let i = 0; i < n; i++) segs.push([pts[i], rs[i], pts[i + 1], rs[i + 1]]);
+  return { curve: c, d: p => { let d = 1e9; for (const s of segs) d = Math.min(d, roundCone(p, ...s)); return d; } };
+}
+
+// указательный: кончик внизу, к основанию заметно толще и выгнут «бананом»
+const R_TIP = 2.3;
+const TIP_Y = R_TIP - 3;                 // палец длиннее остального на 3 мм: кончик ниже нуля сетки
+const INDEX = digit([[0, TIP_Y, 0], [-1.7, 3.6, 0.6], [-1.7, 8.6, 1.2], [0.4, 12.8, 0.6]], R_TIP, 3.8);
+// кулак — пухлый; основную массу снизу и спереди дают поджатые пальцы
+const FIST = { c: V(-0.8, 16.2, 0.2), r: V(6.2, 5.6, 4.6) };
+// поджатые средний и безымянный: от костяшки вниз и подушечками к ладони
+const CURL = [
+  digit([[-1.6, 14.0, 2.4], [-1.9, 10.8, 1.0], [-2.0, 9.9, -2.4], [-1.7, 12.2, -5.0]], 3.1, 2.9),
+  digit([[-5.4, 14.6, 1.8], [-5.8, 12.0, 0.6], [-5.9, 11.4, -2.2], [-5.5, 13.4, -4.6]], 2.9, 2.7),
+];
+// большой — от основания ладони поперёк поджатых пальцев, кончик загнут
+const THUMB = digit([[4.6, 18.4, -2.4], [5.6, 14.6, -4.6], [3.2, 12.4, -6.6], [-0.6, 12.6, -7.0]], 3.0, 2.5);
+// короткое запястье и манжета-раструб с валиком и углублением внутри
+const AX = { x: -0.8, z: -0.4 };
+const WRIST = [V(AX.x, 19.5, AX.z), 5.0, V(AX.x, 22.5, AX.z), 4.4];
+const CUFF = { y0: 21.4, y1: 24.0, r0: 4.5, r1: 5.4 };
+const RIM = { y: 24.0, R: 5.2, r: 0.9 };
+const SQ = 0.82;                          // запястье и манжета чуть сплюснуты по Z
+
+function cappedCone(p, y0, y1, r0, r1) {  // усечённый конус вдоль Y (И. Квилес)
+  const h = (y1 - y0) / 2, qx = Math.hypot(p.x - AX.x, p.z - AX.z), qy = p.y - (y0 + y1) / 2;
+  const k1x = r1, k1y = h, k2x = r1 - r0, k2y = 2 * h;
+  const cax = qx - Math.min(qx, qy < 0 ? r0 : r1), cay = Math.abs(qy) - h;
+  const t = THREE.MathUtils.clamp(((k1x - qx) * k2x + (k1y - qy) * k2y) / (k2x * k2x + k2y * k2y), 0, 1);
+  const cbx = qx - k1x + k2x * t, cby = qy - k1y + k2y * t;
+  const sg = cbx < 0 && cay < 0 ? -1 : 1;
+  return sg * Math.sqrt(Math.min(cax * cax + cay * cay, cbx * cbx + cby * cby));
+}
+
+function handSDF(p) {
+  let d = ellipsoid(p, FIST.c, FIST.r);
+  d = smin(d, INDEX.d(p), 3.2);
+  for (const f of CURL) d = smin(d, f.d(p), 0.9);
+  d = smin(d, THUMB.d(p), 1.0);
+  const q = V(p.x, p.y, AX.z + (p.z - AX.z) / SQ);
+  d = smin(d, roundCone(q, ...WRIST) * SQ, 2.5);
+  let cuff = smin(cappedCone(q, CUFF.y0, CUFF.y1, CUFF.r0, CUFF.r1),
+    Math.hypot(Math.hypot(q.x - AX.x, q.z - AX.z) - RIM.R, q.y - RIM.y) - RIM.r, 0.6);
+  d = smin(d, cuff * SQ, 0.5);            // манжета — с перегибом: её край виден
+  // проём — плавным вычитанием: на остром крае контур рассыпается на чёрточки
+  const hole = smax(Math.hypot(q.x - AX.x, q.z - AX.z) - (RIM.R - 1.3), RIM.y - 1.2 - q.y, 0.5) * SQ;
+  return smax(d, -hole, 0.4);
+}
+
+// ─── сетка: surface nets ────────────────────────────────────────────────────
+function mesh(f, lo, hi, h) {
+  const nx = Math.ceil((hi.x - lo.x) / h) + 1, ny = Math.ceil((hi.y - lo.y) / h) + 1, nz = Math.ceil((hi.z - lo.z) / h) + 1;
+  const F = new Float32Array(nx * ny * nz), p = V(0, 0, 0);
+  const id = (i, j, k) => i + nx * (j + ny * k);
+  for (let k = 0; k < nz; k++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++)
+    F[id(i, j, k)] = f(p.set(lo.x + i * h, lo.y + j * h, lo.z + k * h));
+  const cell = new Int32Array(nx * ny * nz).fill(-1), pos = [];
+  const C = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]];
+  const E = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
+  for (let k = 0; k < nz - 1; k++) for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const v = C.map(([a, b, c]) => F[id(i + a, j + b, k + c)]);
+    if (v.every(x => x > 0) || v.every(x => x <= 0)) continue;
+    let sx = 0, sy = 0, sz = 0, n = 0;
+    for (const [a, b] of E) {
+      if ((v[a] > 0) === (v[b] > 0)) continue;
+      const t = v[a] / (v[a] - v[b]);
+      sx += C[a][0] + (C[b][0] - C[a][0]) * t; sy += C[a][1] + (C[b][1] - C[a][1]) * t; sz += C[a][2] + (C[b][2] - C[a][2]) * t; n++;
     }
+    cell[id(i, j, k)] = pos.length / 3;
+    pos.push(lo.x + (i + sx / n) * h, lo.y + (j + sy / n) * h, lo.z + (k + sz / n) * h);
+  }
+  const idx = [];
+  const quad = (a, b, c, d) => { if (a >= 0 && b >= 0 && c >= 0 && d >= 0) idx.push(a, b, c, a, c, d); };
+  for (let k = 1; k < nz - 1; k++) for (let j = 1; j < ny - 1; j++) for (let i = 1; i < nx - 1; i++) {
+    const s = F[id(i, j, k)] > 0;
+    if (s !== (F[id(i + 1, j, k)] > 0)) quad(cell[id(i, j - 1, k - 1)], cell[id(i, j, k - 1)], cell[id(i, j, k)], cell[id(i, j - 1, k)]);
+    if (s !== (F[id(i, j + 1, k)] > 0)) quad(cell[id(i - 1, j, k - 1)], cell[id(i, j, k - 1)], cell[id(i, j, k)], cell[id(i - 1, j, k)]);
+    if (s !== (F[id(i, j, k + 1)] > 0)) quad(cell[id(i - 1, j - 1, k)], cell[id(i, j - 1, k)], cell[id(i, j, k)], cell[id(i - 1, j, k)]);
+  }
+  // вершины — на поверхность (два шага Ньютона), нормаль — градиент поля
+  const nrm = new Float32Array(pos.length), g = V(0, 0, 0), e = h * 0.25;
+  const grad = q => g.set(f(V(q.x + e, q.y, q.z)) - f(V(q.x - e, q.y, q.z)), f(V(q.x, q.y + e, q.z)) - f(V(q.x, q.y - e, q.z)),
+    f(V(q.x, q.y, q.z + e)) - f(V(q.x, q.y, q.z - e))).normalize();
+  for (let i = 0; i < pos.length; i += 3) {
+    p.fromArray(pos, i);
+    for (let it = 0; it < 2; it++) p.addScaledVector(grad(p), -f(p));
+    p.toArray(pos, i);
+    grad(p).toArray(nrm, i);
+  }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
   geo.setIndex(idx);
-  geo.computeVertexNormals();
-  // на полюсах вершины совпадают, а нормали у каждой — от своего треугольника: усредняем
-  const n = geo.attributes.normal, s = new THREE.Vector3();
-  for (const row of [0, nu]) {
-    s.set(0, 0, 0);
-    for (let j = 0; j < nv; j++) s.x += n.getX(row * nv + j), s.y += n.getY(row * nv + j), s.z += n.getZ(row * nv + j);
-    s.normalize();
-    for (let j = 0; j < nv; j++) n.setXYZ(row * nv + j, s.x, s.y, s.z);
-  }
-  geo.userData.fn = fn;
   return geo;
 }
 
-// ладонь — суперэллипсоид: |x/a|^p + |y/b|^p + |z/c|^p = 1, p = 2/E (E < 1 — «квадратнее»)
-const PALM = { c: new THREE.Vector3(0, 7.2, 0), r: new THREE.Vector3(6.3, 6.6, 3.4), e: 0.72 };
-const spow = (x, e) => Math.sign(x) * Math.abs(x) ** e;
-function palmFn(u, v, p) {
-  const a = Math.PI * u, b = 2 * Math.PI * v, { c, r, e } = PALM;
-  return p.set(c.x + r.x * spow(Math.sin(a), e) * spow(Math.cos(b), e),
-               c.y - r.y * spow(Math.cos(a), e),
-               c.z + r.z * spow(Math.sin(a), e) * spow(Math.sin(b), e));
-}
-function palmF(q) {                         // < 1 — внутри ладони
-  const { c, r, e } = PALM, k = 2 / e;
-  return Math.abs((q.x - c.x) / r.x) ** k + Math.abs((q.y - c.y) / r.y) ** k + Math.abs((q.z - c.z) / r.z) ** k;
-}
-
-// палец — трубка по кривой с переменным радиусом и полусферами на концах
-function fingerFn(points, r0, r1) {
-  const curve = new THREE.CatmullRomCurve3(points.map(a => new THREE.Vector3(...a)));
-  const N = 64, fr = curve.computeFrenetFrames(N, false);
-  const len = curve.getLength(), cap0 = Math.PI * r0 / 2, cap1 = Math.PI * r1 / 2, T = cap0 + len + cap1;
-  const frame = s => Math.min(N, Math.round(s * N));
-  const c = new THREE.Vector3(), t = new THREE.Vector3();
-  return (u, v, p) => {
-    const w = u * T, b = 2 * Math.PI * v;
-    let s, rad, ax;                         // доля длины, радиус сечения, сдвиг вдоль касательной
-    if (w < cap0) { const a = w / r0; s = 0; rad = r0 * Math.sin(a); ax = -r0 * Math.cos(a); }
-    else if (w > cap0 + len) { const a = (T - w) / r1; s = 1; rad = r1 * Math.sin(a); ax = r1 * Math.cos(a); }
-    else { s = (w - cap0) / len; rad = THREE.MathUtils.lerp(r0, r1, s); ax = 0; }
-    const k = frame(s);
-    curve.getPointAt(s, c);
-    curve.getTangentAt(s, t);
-    return p.copy(c).addScaledVector(t, ax)
-      .addScaledVector(fr.normals[k], rad * Math.cos(b)).addScaledVector(fr.binormals[k], rad * Math.sin(b));
-  };
-}
-
-// манжета — тело вращения вдоль +Y, сплюснутое по Z (запястье не круглое); профиль (r, y)
-// с отворотом на краю: на нём контур сам «ломается», рисуя валик
-const CUFF_Z = 0.72;
-const CUFF = new THREE.SplineCurve([
-  [0, 10.4], [3.6, 10.6], [4.3, 12.5], [4.6, 15], [5.6, 18.2], [6.5, 19.2], [6.6, 20.4], [6.0, 21.1], [5.2, 20.9], [0, 20.6],
-].map(a => new THREE.Vector2(...a)));
-function cuffFn(u, v, p) {
-  const q = CUFF.getPoint(u), b = 2 * Math.PI * v;
-  return p.set(q.x * Math.cos(b), q.y, q.x * Math.sin(b) * CUFF_Z);
-}
-
-// пальцы (правая рука, тыл к +Z): указательный вытянут вниз, средний и безымянный поджаты
-// к ладони, большой прижат поверх них со стороны ладони
-const FINGERS = [
-  fingerFn([[3.3, 3.2, 0.2], [3.2, -1.5, 0.4], [3.0, -6.5, 0.6], [2.9, -9.8, 0.5]], 1.95, 1.8),     // указательный
-  fingerFn([[-0.3, 3.0, 0.6], [-0.3, -0.6, 0.9], [-0.3, -2.6, -1.4], [-0.3, -1.4, -3.9], [-0.3, 1.4, -3.6]], 1.9, 1.75),   // средний
-  fingerFn([[-3.6, 3.2, 0.5], [-3.7, 0.0, 0.6], [-3.8, -1.6, -1.6], [-3.8, -0.4, -3.7], [-3.7, 1.9, -3.4]], 1.85, 1.7),    // безымянный
-  fingerFn([[4.6, 6.5, -1.6], [6.1, 3.6, -2.4], [4.4, 0.6, -3.9], [1.6, -0.4, -4.6]], 2.0, 1.85),  // большой
-];
-const TIP_Y = -9.8 - 1.8;      // кончик указательного — с полусферой
-
-// линия стыка поверхности с ладонью: по каждому v — первый выход из ладони от конца u0
-function seam(fn, from, to, nv = 48) {
-  const pts = [], p = new THREE.Vector3();
-  for (let j = 0; j <= nv; j++) {
-    const v = j / nv;
-    if (palmF(fn(from, v, p)) >= 1) return null;          // этот конец не в ладони
-    let lo = from, hi = to;
-    if (palmF(fn(hi, v, p)) < 1) return null;
-    for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (palmF(fn(m, v, p)) < 1) lo = m; else hi = m; }
-    pts.push(fn(hi, v, p).clone());
-  }
-  return pts;
-}
-
-// стежки на тыльной стороне — три линии от манжеты к костяшкам, по поверхности ладони
-function stitch(x, y0, y1) {
-  const { c, r, e } = PALM, k = 2 / e, pts = [];
-  for (let i = 0; i <= 12; i++) {
-    const y = THREE.MathUtils.lerp(y0, y1, i / 12);
-    const z = r.z * Math.max(0, 1 - Math.abs(x / r.x) ** k - Math.abs((y - c.y) / r.y) ** k) ** (1 / k);
-    pts.push(new THREE.Vector3(x, y, c.z + z + 0.04));
+// складка вдоль поджатого пальца с его стороны side (±X): точка у бока пальца выносится
+// лучом от оси кулака на поверхность — попадает в ложбину между пальцами
+function crease(f, side, t0, t1, n = 12) {
+  const pts = [], p = V(0, 0, 0), dir = V(0, 0, 0);
+  for (let i = 0; i <= n; i++) {
+    const t = THREE.MathUtils.lerp(t0, t1, i / n);
+    const m = f.curve.getPointAt(t);
+    m.x += side * 2.4;
+    dir.set(0, m.y - FIST.c.y, m.z - FIST.c.z).normalize();
+    let lo = -3, hi = 8;
+    for (let k = 0; k < 30; k++) { const s = (lo + hi) / 2; if (handSDF(p.copy(m).addScaledVector(dir, s)) < 0) lo = s; else hi = s; }
+    pts.push(p.copy(m).addScaledVector(dir, hi + 0.03).clone());
   }
   return pts;
 }
@@ -146,29 +181,20 @@ export class Hand {
     this.turn.add(this.pose);
     this.pose.add(this.body);
     this.pose.scale.setScalar(SCALE);
-    this.body.position.y = -TIP_Y;
+    this.body.position.y = R_TIP - TIP_Y;  // кончик пальца — в нуле pose
     this.mat = lineMat();
-    this.meshes = [];
-    const geos = [surface(palmFn, 28, 36), surface(cuffFn, 32, 36),
-      ...FINGERS.map(fn => surface(fn, 44, 20))];
-    for (const g of geos) {
-      const m = new THREE.Mesh(g, occluderMat);
-      m.renderOrder = -1;
-      this.body.add(m);
-      this.meshes.push(m);
-    }
+    const geo = mesh(handSDF, V(-11, -3.8, -12), V(10, 27, 9), 0.45);
+    const m = new THREE.Mesh(geo, occluderMat);
+    m.renderOrder = -1;
+    this.body.add(m);
+    this.meshes = [m];
     // контур: отрезков не больше, чем треугольников
-    this.geos = geos;
-    const tris = geos.reduce((n, g) => n + g.index.count / 3, 0);
-    this.segGeo = new LineSegmentsGeometry().setPositions(new Float32Array(tris * 6));
+    this.segGeo = new LineSegmentsGeometry().setPositions(new Float32Array(geo.index.count * 2));
     this.seg = new LineSegments2(this.segGeo, this.mat);
     this.seg.frustumCulled = false;
     this.body.add(this.seg);
-    // постоянные линии: стыки с ладонью и стежки
-    const fixed = [seam(cuffFn, 0, 0.5)];
-    for (const fn of FINGERS) fixed.push(seam(fn, 0, 0.5), seam(fn, 1, 0.5));
-    fixed.push(stitch(-2.6, 4.6, 10.2), stitch(0, 4.4, 10.6), stitch(2.6, 4.6, 10.2));
-    for (const pts of fixed.filter(Boolean)) {
+    // складки между поджатыми пальцами и у большого
+    for (const pts of [crease(CURL[0], 1, 0.25, 0.8), crease(CURL[0], -1, 0.25, 0.8)]) {
       const l = new Line2(new LineGeometry().setPositions(pts.flatMap(q => [q.x, q.y, q.z])), this.mat);
       l.frustumCulled = false;
       this.body.add(l);

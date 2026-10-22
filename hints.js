@@ -5,7 +5,6 @@ import * as THREE from 'three';
 
 export const HINT_TEXT = {
   ru: {
-    top: '1 клик: смена экрана, 2 клика: включение оповещений, 3 клика: поворот экрана',
     temp: 'Текущая температура', min: 'Минимум за сутки', max: 'Максимум за сутки',
     icons: 'Статус: обогреватель или кулер, Wi-Fi, звуковые оповещения',
     chart: 'График температуры за 24 часа',
@@ -14,7 +13,6 @@ export const HINT_TEXT = {
     back: 'Задняя часть: всё дно — кнопка',
   },
   en: {
-    top: '1 click: next screen, 2 clicks: alerts on/off, 3 clicks: rotate the screen',
     temp: 'Current temperature', min: '24-hour minimum', max: '24-hour maximum',
     icons: 'Status: heater or cooler, Wi-Fi, sound alerts',
     chart: 'Temperature over the last 24 hours',
@@ -23,7 +21,6 @@ export const HINT_TEXT = {
     back: 'Back case: the whole bottom is a button',
   },
   de: {
-    top: '1 Klick: nächster Bildschirm, 2 Klicks: Warnungen ein/aus, 3 Klicks: Bildschirm drehen',
     temp: 'Aktuelle Temperatur', min: 'Tagesminimum', max: 'Tagesmaximum',
     icons: 'Status: Heizung oder Lüfter, WLAN, Tonwarnungen',
     chart: 'Temperaturverlauf der letzten 24 Stunden',
@@ -32,7 +29,6 @@ export const HINT_TEXT = {
     back: 'Rückteil: der ganze Boden ist eine Taste',
   },
   fr: {
-    top: '1 clic : écran suivant, 2 clics : alertes on/off, 3 clics : rotation de l’écran',
     temp: 'Température actuelle', min: 'Minimum sur 24 h', max: 'Maximum sur 24 h',
     icons: 'État : chauffage ou ventilateur, Wi-Fi, alertes sonores',
     chart: 'Température des dernières 24 heures',
@@ -41,7 +37,6 @@ export const HINT_TEXT = {
     back: 'Arrière : tout le fond est un bouton',
   },
   es: {
-    top: '1 clic: siguiente pantalla, 2 clics: alertas sí/no, 3 clics: girar la pantalla',
     temp: 'Temperatura actual', min: 'Mínima de 24 h', max: 'Máxima de 24 h',
     icons: 'Estado: calefactor o ventilador, Wi-Fi, alertas sonoras',
     chart: 'Temperatura de las últimas 24 horas',
@@ -50,7 +45,6 @@ export const HINT_TEXT = {
     back: 'Parte trasera: todo el fondo es un botón',
   },
   pt: {
-    top: '1 clique: próxima tela, 2 cliques: alertas lig./desl., 3 cliques: girar a tela',
     temp: 'Temperatura atual', min: 'Mínima em 24 h', max: 'Máxima em 24 h',
     icons: 'Estado: aquecedor ou ventilador, Wi-Fi, alertas sonoros',
     chart: 'Temperatura nas últimas 24 horas',

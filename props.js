@@ -22,7 +22,7 @@ const PORT = new THREE.Vector3(16.92, -13.31, -7.08);
 const FLOOR_Y = -35.3;
 
 const materials = [];
-const lineMat = () => {
+export const lineMat = () => {
   const m = new LineMaterial({ color: INK, linewidth: STROKE, transparent: true, toneMapped: false, depthWrite: false });
   materials.push(m);
   return m;

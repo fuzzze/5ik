@@ -8,6 +8,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { BlinScreen, LANGS, loadFont } from './screen.js';
 import { buildProps, setResolution, updateProps } from './props.js';
 import { Hints } from './hints.js';
+import { Hand } from './hand.js';
 import { applySiteLang, LANG_NAMES } from './site.js';
 import './flash.js';
 import { applyFinish } from './finish.js';
@@ -94,8 +95,7 @@ function setLang(l) {
   lang = l;
 }
 // ─── подсказки ──────────────────────────────────────────────────────────────
-// Собрано, под углом — одна на макушке (как жать кнопку). Строго спереди — пять
-// к информации на экране. Полностью разобрано — по одной на каждую из 5 деталей.
+// Строго спереди — пять к информации на экране (как жать макушку, показывает рука — ниже). Полностью разобрано — по одной на каждую из 5 деталей.
 // Точки — в мм модели; у экранных — пиксели экрана 240×240 (координаты ui_init()).
 const hints = new Hints(document.getElementById('hints'));
 let modelRoot = null;
@@ -115,23 +115,21 @@ function screenPoint(px, py) {
 const SCREEN_HINTS = { temp: [182, 76], min: [36, 141], max: [204, 141], icons: [176, 51], chart: [176, 157] };
 // у деталей разобранной схемы — под нижней точкой детали на экране, с отступом (см. partEdge)
 const PART_HINTS = ['front', 'display', 's2', 'buzzer', 'back'];
-hints.add('top', () => partEdge(null, 1), () => pressTop(), true);   // над макушкой: клик — нажатие
 for (const [id, [px, py]] of Object.entries(SCREEN_HINTS)) hints.add(id, () => screenPoint(px, py));
 for (const g of PART_HINTS) hints.add(g, () => partEdge(g, -1), null, true);
 
 // Точка у края детали на экране: проекция её вершин (выборка — до HINT_SAMPLE на группу),
 // по центру по горизонтали, на HINT_GAP px ниже нижней (side −1) или выше верхней (side 1)
-// точки; глубина — центра детали. group null — вся модель (маркер над макушкой).
+// точки; глубина — центра детали.
 const HINT_GAP = 18, HINT_SAMPLE = 600;   // px от края детали до центра кружка (16 px)
 const partBox = new THREE.Box3(), partV = new THREE.Vector3(), partC = new THREE.Vector3();
 const partPts = new Map();   // группа → [[сетка, Float32Array локальных точек]]
 function partSamples(group) {
   if (!partPts.has(group)) {
-    const mine = parts.filter(p => group === null || p.group === group);
+    const mine = parts.filter(p => p.group === group);
     partPts.set(group, mine.map(p => {
       const pos = p.obj.geometry.attributes.position, n = pos.count;
-      const budget = group === null ? 3 * HINT_SAMPLE : HINT_SAMPLE;   // вся модель — выборка гуще
-      const step = Math.max(1, Math.floor(n * mine.length / budget));
+      const step = Math.max(1, Math.floor(n * mine.length / HINT_SAMPLE));
       const a = [];
       for (let i = 0; i < n; i += step) a.push(pos.getX(i), pos.getY(i), pos.getZ(i));
       return [p.obj, new Float32Array(a)];
@@ -162,7 +160,7 @@ function updateHints() {
   const show = new Set();
   const assembled = t < 0.02 && tTarget < 0.02, exploded = t > 0.97;
   const frontal = camDir.subVectors(camera.position, controls.target).normalize().z > FRONTAL;
-  if (assembled) (frontal ? Object.keys(SCREEN_HINTS) : ['top']).forEach(id => show.add(id));
+  if (assembled && frontal) Object.keys(SCREEN_HINTS).forEach(id => show.add(id));
   if (exploded) PART_HINTS.forEach(id => show.add(id));
   hints.update(camera, show, stageW(), stageH());
 }
@@ -289,6 +287,7 @@ function hitTop(ev) {
   const r = renderer.domElement.getBoundingClientRect();
   ndc.set((ev.clientX - r.left) / r.width * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
   ray.setFromCamera(ndc, camera);
+  if (hand.hit(ray)) return true;          // по самой руке — тоже нажатие
   const hit = ray.intersectObjects(parts.map(p => p.obj), false)[0];
   if (!hit) return false;
   // как в жизни: щёлкает, если сжать макушку или дно-клавишу — в любом положении
@@ -407,6 +406,37 @@ function fadeProps(now, e) {
   });
 }
 
+// ─── рука над макушкой ──────────────────────────────────────────────────────
+// Перчатка с вытянутым пальцем висит над макушкой и покачивается — показывает, куда жать;
+// при нажатии тычет пальцем. Всегда приходит сверху и сбоку под HAND_TILT к нормали: стоя
+// и на боку — к макушке, вверх дном — к дну-клавише (оно и щёлкает). Видна в собранном
+// виде; при повороте гаснет и появляется уже на новом месте.
+const HAND_TOP = new THREE.Vector3(0, 21.2, -4);    // макушка, мм модели (ближе к лицу — виднее)
+const HAND_BOTTOM = new THREE.Vector3(0, -35.3, -4);
+const HAND_TILT = THREE.MathUtils.degToRad(56);
+const hand = new Hand();
+const handRoot = new THREE.Group();
+handRoot.position.copy(CENTER).negate();
+handRoot.add(hand.root);
+device.add(handRoot);
+let handA = 0, handRot = -1;
+function placeHand(r) {
+  const R = r * Math.PI / 2;                      // поворот корпуса против часовой
+  const top = Math.cos(R) > -0.5;                 // макушка смотрит не вниз
+  const n = Math.atan2(Math.sin(top ? R : R + Math.PI), Math.cos(top ? R : R + Math.PI));   // нормаль в мире
+  const w = Math.abs(n) < 1e-3 ? -HAND_TILT : n - Math.sign(n) * HAND_TILT;   // стоя — справа сверху
+  hand.place(top ? HAND_TOP : HAND_BOTTOM, w - R);   // наклон — в системе модели
+  handRot = r;
+}
+function updateHand(now, e) {
+  const r = Math.round(turnTo / (Math.PI / 2)) & 3;
+  const settled = turnT0 < 0 || now > turnT0 + TURN_TIME;
+  if (r !== handRot && handA < 0.02 && settled) placeHand(r);
+  const want = modelRoot && t < 0.02 && tTarget < 0.02 && r === handRot && settled ? 1 : 0;
+  handA += (want - handA) * 0.08;
+  hand.update(now, pressAngle(now) / THREE.MathUtils.degToRad(PRESS_DEG), handA * (1 - e), camera.position);
+}
+
 // ─── поворот устройства вслед за экраном ────────────────────────────────────
 // Экран повернулся на 90° по часовой — корпус чуть погодя плавно ложится на бок
 // против часовой, и картинка снова стоит прямо (корпус встаёт на любую из трёх граней).
@@ -479,6 +509,7 @@ function frame() {
   scene.updateMatrixWorld();
   frameExploded(e);
   fadeProps(now, e);
+  updateHand(now, e);
   updateHints();
   if (screen) {
     screen.draw(performance.now());

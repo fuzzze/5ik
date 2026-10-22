@@ -9,11 +9,12 @@
 // экрана при любом ракурсе и масштабе.
 import * as THREE from 'three';
 
-const GAP = 6;        // px от силуэта до линии
+const GAP = 18;       // px от силуэта до линии
 const WIDTH = 3;      // px — толщина линии
 const GLOW = 9;       // px — «радиус» свечения (гаусс)
 const GLOW_A = 0.4;   // непрозрачность свечения у линии
-const D_MAX = 48;     // px — потолок поля расстояний (байт 255)
+const AA = 1.0;       // px — полуширина сглаживания края линии
+const D_MAX = 64;     // px — потолок поля расстояний (байт 255)
 const MARGIN = GAP + WIDTH + 3 * GLOW;   // px — запас вокруг детали при расчёте поля
 
 const VERT = 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
@@ -23,7 +24,7 @@ const FRAG = `
   void main() {
     float d = texture2D(tDist, vUv).r * ${D_MAX.toFixed(1)};
     float c = ${(GAP + WIDTH / 2).toFixed(1)};
-    float line = 1.0 - smoothstep(${(WIDTH / 2 - 0.6).toFixed(2)}, ${(WIDTH / 2 + 0.6).toFixed(2)}, abs(d - c));
+    float line = 1.0 - smoothstep(${(WIDTH / 2 - AA).toFixed(2)}, ${(WIDTH / 2 + AA).toFixed(2)}, abs(d - c));
     float k = (d - c) / ${GLOW.toFixed(1)};
     float glow = ${GLOW_A.toFixed(2)} * exp(-k * k) * smoothstep(0.0, 2.0, d);   // на саму деталь не заходит
     float a = max(line, glow) * opacity;

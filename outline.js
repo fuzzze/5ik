@@ -1,5 +1,5 @@
-// Обводка детали разобранной схемы по внешнему контуру: чёрная линия на отступе GAP от силуэта,
-// толщиной как штрих второстепенных объектов (STROKE из props.js).
+// Обводка детали разобранной схемы по внешнему контуру: белая чуть размытая линия на отступе GAP
+// от силуэта.
 //
 // Каждый кадр: силуэт детали (её слой, белый материал) рисуется в рендер-таргет размером
 // со сцену в CSS px → в прямоугольнике детали читается на CPU → внутренние дыры заливаются
@@ -8,13 +8,11 @@
 // Линию рисует шейдер поверх сцены по этому полю: отступ ровный в пикселях
 // экрана при любом ракурсе и масштабе.
 import * as THREE from 'three';
-import { STROKE } from './props.js';
 
 const GAP = 18;       // px от силуэта до линии
-const WIDTH = STROKE; // px — толщина линии
-const AA = 0.6;       // px — полуширина сглаживания края линии
+const BLUR = 1.3;     // px — σ гауссова профиля линии: мягкий край, видимая толщина ~2–3 px
 const D_MAX = 32;     // px — потолок поля расстояний (байт 255)
-const MARGIN = GAP + WIDTH + 4;   // px — запас вокруг детали при расчёте поля
+const MARGIN = GAP + 4 * BLUR + 4;   // px — запас вокруг детали при расчёте поля
 
 const VERT = 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
 const FRAG = `
@@ -22,8 +20,8 @@ const FRAG = `
   varying vec2 vUv;
   void main() {
     float d = texture2D(tDist, vUv).r * ${D_MAX.toFixed(1)};
-    float c = ${(GAP + WIDTH / 2).toFixed(1)};
-    float line = 1.0 - smoothstep(${(WIDTH / 2 - AA).toFixed(2)}, ${(WIDTH / 2 + AA).toFixed(2)}, abs(d - c));
+    float k = (d - ${GAP.toFixed(1)}) / ${BLUR.toFixed(2)};
+    float line = exp(-k * k);
     float a = line * opacity;
     gl_FragColor = vec4(color, a);
   }`;
@@ -60,7 +58,7 @@ export class PartOutline {
     this.maskMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
     this.mat = new THREE.ShaderMaterial({
       vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthTest: false, depthWrite: false,
-      uniforms: { tDist: { value: null }, color: { value: cssColor('--ink') }, opacity: { value: 0 } },
+      uniforms: { tDist: { value: null }, color: { value: cssColor('--white') }, opacity: { value: 0 } },
     });
     this.mat.toneMapped = false;
     this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.mat);

@@ -15,7 +15,7 @@ import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 
 const INK = 0x5f6368;        // цвет штриха
-export const STROKE = 1.5;   // толщина штриха, px — везде одна (и у обводки деталей, outline.js)
+const STROKE = 1.5;          // толщина штриха, px — везде одна
 
 // гнездо USB-C и корпус (enclosure.py: LM["usb_face"]; дно — Y_OUT_BOT − FOOT)
 const PORT = new THREE.Vector3(16.92, -13.31, -7.08);

@@ -17,8 +17,8 @@ import { applyFinish } from './finish.js';
 const CENTER = new THREE.Vector3(0, -7, -8);   // середина собранного устройства
 const TOP_Y = 4;          // клик выше этой отметки (мм от центра экрана) — «макушка»
 const BOTTOM_Y = -31.5;   // клик ниже — дно-клавиша (Y_IN_BOT)
-const PRESS_DEG = 3.4;    // наклон корпуса при нажатии — как у кнопки-дна
-const PIVOT = new THREE.Vector3(0, -33.1, -14);  // ось шарниров клавиши
+const PRESS_DEG = 2.1;    // наклон корпуса при нажатии — как у кнопки-дна
+const PIVOT = new THREE.Vector3(0, -29.5, -18.6);  // ось клавиши — середина полосы-шарнира
 
 // ─── сцена ──────────────────────────────────────────────────────────────────
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });   // фон — CSS страницы

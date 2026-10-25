@@ -74,7 +74,6 @@ a.hdr-blin{color:var(--ink)}
 .toc a.act{background:#fff;color:var(--ink);font-weight:600}
 .body{padding:8px 56px 56px;max-width:1080px;font-size:14px;line-height:1.65;color:#1c1c1e}
 .body section{padding-top:12px}
-.body section+section{margin-top:28px}
 .body h2{font-size:28px;font-weight:600;display:flex;align-items:center;gap:16px;margin:28px 0 18px;line-height:1.2}
 .body h2::after{content:'';flex:1;height:1px;background:var(--ink)}
 .body h2 .n{color:var(--mute);font-weight:500}
@@ -133,8 +132,12 @@ figcaption{font-size:12px;color:var(--ink-soft);margin-top:8px;line-height:1.5}
 .faq summary::before{content:'+';width:14px;flex:none}
 .faq details[open] summary::before{content:'–'}
 .faq details>div{padding:6px 0 4px 24px}
-.top{display:inline-block;margin-top:8px;font-size:12px;color:var(--mute);text-decoration:none}
-.top:hover{color:var(--ink)}
+/* внизу раздела — соседние разделы: показан всегда один */
+.pager{display:flex;gap:16px;margin-top:40px;padding-top:20px;border-top:1px solid #000}
+.pager a{display:flex;flex-direction:column;gap:2px;max-width:48%;padding:10px 14px;border:1px solid #000;border-radius:4px;text-decoration:none;line-height:1.35}
+.pager a:hover{background:var(--mid)}
+.pager .next{margin-left:auto;text-align:right}
+.pager small{font-size:12px;color:var(--mute)}
 @media (max-width:1100px){
   .doc{grid-template-columns:minmax(0,1fr)}
   .page-hdr .hdr-icons{width:40px;height:40px}   /* место под закреплённый бургер */
@@ -159,7 +162,7 @@ figcaption{font-size:12px;color:var(--ink-soft);margin-top:8px;line-height:1.5}
   .hdr-time{font-size:15px}
   pre{font-size:12px}
 }
-@media print{html::before,.toc,.ftr,.burger,.toc-bg{display:none}.doc{display:block}.card{border:0;margin:0}body{box-shadow:none}}
+@media print{html::before,.toc,.ftr,.burger,.toc-bg,.pager{display:none}main section[hidden]{display:block!important}.doc{display:block}.card{border:0;margin:0}body{box-shadow:none}}
 </style>
 </head>
 <body>
@@ -648,12 +651,12 @@ actions:
 <!-- ═══════════════════════════════ 14 ═══════════════════════════════ -->
 <section id="settings">
 <h2><span class="n">14</span> Настройки устройства</h2>
-<p>Шестерёнка справа от вкладок. Почти все изменения применяются кнопкой «Сохранить и перезагрузить» внизу — устройство перезагружается за несколько секунд.</p>
-<figure class="frame"><img src="img/admin_settings.jpg" width="1600" alt="Страница настроек целиком" loading="lazy"><figcaption>Настройки целиком. Подробнее по блокам — ниже.</figcaption></figure>
+<p>Шестерёнка справа от вкладок. Слева — меню разделов, справа — открытый раздел; админка запоминает, какой раздел был открыт. На телефоне меню — выпадающий список над разделом. Почти все изменения применяются кнопкой «Сохранить и перезагрузить» внизу — она сохраняет настройки <b>всех</b> разделов сразу, устройство перезагружается за несколько секунд.</p>
+<figure class="frame"><img src="img/admin_settings.jpg" width="1600" alt="Страница настроек: меню разделов и раздел Подключение" loading="lazy"><figcaption>Настройки: слева меню разделов, справа — «Подключение». Подробнее по разделам — ниже.</figcaption></figure>
 
 <h3>Подключение</h3>
 <div class="row2">
-<figure class="frame" style="margin-top:4px"><img src="img/set_net.png" width="840" alt="Блок Подключение" loading="lazy"></figure>
+<figure class="frame" style="margin-top:4px"><img src="img/set_net.png" width="840" alt="Раздел Подключение" loading="lazy"></figure>
 <div>
 <p>Wi-Fi, MQTT-брокер, логин и пароль брокера — то же, что в <a href="#ap">портале</a>. Сохранённые пароли не показываются: пустое поле «Сохранён» значит «оставить как есть».</p>
 <p><b>Имя в сети</b> — по нему админка открывается как <code>http://имя.local</code>, его же видно в роутере и в списке «Устройства Blin». Латиница, цифры и дефис.</p>
@@ -672,11 +675,11 @@ actions:
 <li><b>Визуальные эффекты</b> — 80-е: VHS-снег, разрыв строк, RGB-аберрация (сила каждого — ползунком), CRT-сканлайны поверх экрана, звёздное небо на фоне. «Нравственный закон во мне» — пара к звёздному небу, дань Канту.</li>
 </ul>
 </div>
-<figure class="frame" style="margin-top:4px"><img src="img/set_look.png" width="840" alt="Блоки Оформление и Визуальные эффекты" loading="lazy"></figure>
+<figure class="frame" style="margin-top:4px"><img src="img/set_look.png" width="840" alt="Раздел Оформление" loading="lazy"></figure>
 </div>
 
 <h3>Скриншот с устройства</h3>
-<p>Блок показывает, что сейчас на экране Blin, — удобно, если устройство в другой комнате. Стрелки ← → переключают экраны устройства прямо отсюда, «Обновить» делает новый снимок.</p>
+<p>Раздел показывает, что сейчас на экране Blin, — удобно, если устройство в другой комнате. Снимок делается, когда вы открываете раздел. Стрелки ← → переключают экраны устройства прямо отсюда, «Обновить» делает новый снимок.</p>
 
 <h3>Аудио</h3>
 <ul>
@@ -686,7 +689,7 @@ actions:
 
 <h3>Администратор, локализация, синхронизация</h3>
 <div class="row2">
-<figure class="frame" style="margin-top:4px"><img src="img/set_sync.png" width="840" alt="Блоки Администратор, Локализация, Синхронизация, Устройства Blin" loading="lazy"></figure>
+<figure class="frame" style="margin-top:4px"><img src="img/set_sync.png" width="840" alt="Раздел Синхронизация" loading="lazy"></figure>
 <div>
 <p><b>Администратор</b> — логин и пароль для админки, см. <a href="#auth">Пароль и гостевой режим</a>.</p>
 <p><b>Локализация</b> — язык админки и надписей на экране устройства.</p>
@@ -913,7 +916,6 @@ sudo tailscale up --advertise-routes=192.168.1.0/24</code></pre>
 <tr><td><code>/mem</code></td><td>память устройства и счётчик ответов «занято» — для диагностики</td></tr>
 </table>
 <p>Если задан пароль и включено «Закрыть /api авторизацией», служебные поля <code>/api</code> отдаются только после входа.</p>
-<a class="top" href="#about">↑ к началу</a>
 </section>
 </main>
 </div>
@@ -948,12 +950,29 @@ sudo tailscale up --advertise-routes=192.168.1.0/24</code></pre>
   document.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){set(false);});});
   document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});
 })();
-// Подсветка текущего раздела в оглавлении
+// Показан один раздел — по #якорю (пункт оглавления или ссылка в тексте), без якоря — первый.
+// Внизу раздела — «Назад / Дальше» на соседние.
 (function(){
-  var links=[].slice.call(document.querySelectorAll('.toc a')),map={};
-  links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
-  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){links.forEach(function(a){a.classList.remove('act')});var a=map[e.target.id];if(a)a.classList.add('act');}});},{rootMargin:'-20% 0px -70% 0px'});
-  document.querySelectorAll('main section').forEach(function(s){io.observe(s)});
+  var secs=[].slice.call(document.querySelectorAll('main section')),links=[].slice.call(document.querySelectorAll('.toc a'));
+  function title(s){var h=s.querySelector('h2').cloneNode(true),n=h.querySelector('.n');if(n)n.remove();return h.textContent.trim();}
+  secs.forEach(function(s,i){
+    var nv=document.createElement('nav');nv.className='pager';
+    [[secs[i-1],'prev','← Назад'],[secs[i+1],'next','Дальше →']].forEach(function(p){
+      if(!p[0])return;
+      var a=document.createElement('a');a.className=p[1];a.href='#'+p[0].id;
+      a.appendChild(document.createElement('small')).textContent=p[2];
+      a.appendChild(document.createElement('span')).textContent=title(p[0]);
+      nv.appendChild(a);});
+    s.appendChild(nv);});
+  function show(){
+    var id=decodeURIComponent(location.hash.slice(1)),t=id?document.getElementById(id):null;
+    var sec=t&&t.closest('main section')||secs[0];
+    secs.forEach(function(s){s.hidden=s!==sec;});
+    links.forEach(function(a){a.classList.toggle('act',a.getAttribute('href')==='#'+sec.id);});
+    if(t&&t!==sec)t.scrollIntoView();else window.scrollTo(0,0);
+  }
+  window.addEventListener('hashchange',show);
+  show();
 })();
 </script>
 </body>

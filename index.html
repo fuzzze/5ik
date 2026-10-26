@@ -66,8 +66,27 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 .rl input[type=checkbox]{border-radius:4px}
 .rl input[type=checkbox]:checked::after{content:'';position:absolute;left:5px;top:1px;width:5px;height:10px;border:solid #000;border-width:0 2px 2px 0;transform:rotate(45deg)}
 .gap12{margin-top:12px}
-.prog-bar{background:#ddd;height:4px;margin:8px 0}
-.prog-fill{height:4px;background:#000;width:0%;transition:width .3s}
+.fl-form{border:0;margin:0;padding:0;min-width:0}
+.fl-form:disabled{opacity:.45}
+.fl-form:disabled .rl,.fl-form:disabled input,.fl-form:disabled select{cursor:default}
+.fl-pre{margin-top:16px;padding-top:4px;border-top:1px solid var(--ink)}
+.fl-hint{font-size:13px;color:var(--ink-soft);margin:12px 0 0;line-height:1.45}
+.fl-sec{font-size:14px;font-weight:700;margin-top:24px}
+.fl-row{display:grid;grid-template-columns:1fr 104px;gap:10px;margin-top:16px}
+.modal-box [hidden]{display:none!important}
+.fi.bad{outline:2px solid #ff2121;outline-offset:2px}
+.fl-act{margin-top:20px}
+.fl-act .btn-save{width:100%}
+/* прогресс прошивки — высотой с поле ввода; полосы едут, пока идёт работа */
+.fl-prog{position:relative;height:40px;border:1px solid var(--ink);border-radius:4px;background:var(--white);overflow:hidden}
+.fl-bar{position:absolute;inset:0 auto 0 0;width:0;overflow:hidden;transition:width .3s}
+.fl-bar::before{content:'';position:absolute;inset:0 0 0 -40px;background:repeating-linear-gradient(-45deg,#000 0 14.142px,#5a5a5e 14.142px 28.284px);animation:fl-run 1s linear infinite}
+.fl-prog.wait .fl-bar{width:100%;opacity:.22;transition:none}
+@keyframes fl-run{to{transform:translateX(40px)}}
+.fl-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;mix-blend-mode:difference;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.fl-bar::before{animation:none}}
+.modal-x:disabled{opacity:.3;cursor:default;background:transparent}
+.modal-box .btn-save:disabled{opacity:.35;cursor:default}
 .ota-msg{font-size:12px;color:#555;margin:4px 0;min-height:1.2em}
 @media (max-width:1280px){
   .page-hdr{padding:14px 16px 14px;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
@@ -207,12 +226,40 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 <div class="modal-box mw-md">
 <div class="modal-head"><div class="sec-sub" data-t="fl">Прошивка по USB</div><button class="modal-x" id="fl-x" onclick="closeModal('modal-flash')">&times;</button></div>
 <div class="modal-body"><p data-t="fl_note"></p><p data-t="fl_steps"></p></div>
+<fieldset class="fl-form" id="fl-form">
 <label class="fi-lbl" for="fl-ver" data-t="fl_ver">Версия</label>
 <select class="fi" id="fl-ver"></select>
 <label class="rl"><input type="checkbox" id="fl-erase" checked> <span data-t="fl_erase"></span></label>
-<div id="fl-prog" style="display:none"><div class="prog-bar"><div id="fl-bar" class="prog-fill"></div></div></div>
+<label class="rl"><input type="checkbox" id="fl-pre"> <span data-t="fl_pre"></span></label>
+<div class="fl-pre" id="fl-pre-box" hidden>
+<p class="fl-hint" data-t="fl_pre_note"></p>
+<label class="fi-lbl" for="fl-lang" data-t="fl_lang">Язык устройства</label>
+<select class="fi" id="fl-lang"></select>
+<div class="fl-sec">Wi-Fi</div>
+<label class="fi-lbl" for="fl-ssid" data-t="fl_ssid">Имя сети</label>
+<input class="fi" id="fl-ssid" maxlength="32" autocomplete="off" spellcheck="false">
+<label class="fi-lbl" for="fl-pass" data-t="fl_pass">Пароль</label>
+<input class="fi" id="fl-pass" type="password" maxlength="63" autocomplete="new-password">
+<div class="fl-sec">MQTT</div>
+<div class="fl-row">
+<div><label class="fi-lbl" for="fl-host" data-t="fl_host">Хост</label><input class="fi" id="fl-host" placeholder="192.168.1.100" autocomplete="off" spellcheck="false"></div>
+<div><label class="fi-lbl" for="fl-port" data-t="fl_port">Порт</label><input class="fi" id="fl-port" type="number" min="1" max="65535" value="1883"></div>
+</div>
+<label class="fi-lbl" for="fl-mquser" data-t="fl_mquser">Логин (необязательно)</label>
+<input class="fi" id="fl-mquser" autocomplete="off" spellcheck="false">
+<label class="fi-lbl" for="fl-mqpass" data-t="fl_mqpass">Пароль (необязательно)</label>
+<input class="fi" id="fl-mqpass" type="password" autocomplete="new-password">
+<div class="fl-sec" data-t="fl_display">Дисплей</div>
+<label class="fi-lbl" for="fl-rot" data-t="fl_rot">Поворот экрана</label>
+<select class="fi" id="fl-rot"><option value="0">0°</option><option value="1">90°</option><option value="2" data-t="fl_rot_case">180° — в корпусе</option><option value="3">270°</option></select>
+<label class="rl"><input type="checkbox" id="fl-follow"> <span data-t="fl_follow">Синхронизироваться с ведущим</span></label>
+</div>
+</fieldset>
+<div class="fl-act">
+<button class="btn-save" id="fl-go" data-t="fl_go">Подключить и прошить</button>
+<div class="fl-prog" id="fl-prog" hidden><div class="fl-bar" id="fl-bar"></div><span class="fl-pct" id="fl-pct"></span></div>
+</div>
 <div id="fl-msg" class="ota-msg"></div>
-<div class="gap12 modal-btns"><button class="btn-save" id="fl-go" data-t="fl_go">Подключить и прошить</button></div>
 </div>
 </div>
 <div class="modal" id="modal-models" onclick="if(event.target===this)this.classList.remove('show')">
@@ -228,7 +275,7 @@ html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 <script>
 function openModal(id){var m=document.getElementById(id);if(m)m.classList.add('show');}
 function closeModal(id){var m=document.getElementById(id);if(m)m.classList.remove('show');}
-addEventListener('keydown',function(e){if(e.key==='Escape')document.querySelectorAll('.modal.show').forEach(function(m){m.classList.remove('show')})});
+addEventListener('keydown',function(e){if(e.key==='Escape'&&!document.body.classList.contains('flashing'))document.querySelectorAll('.modal.show').forEach(function(m){m.classList.remove('show')})});
 </script>
 <script type="module" src="./main.js"></script>
 </body>

@@ -198,8 +198,10 @@ body.theme-dark{--bg:#1c1c1e;--ink:#fff;--white:#1c1c1e;--soft:#2a2a2c;--mid:#3a
 .hint-tx{position:absolute;right:0;top:calc(100% + 8px);z-index:50;width:max-content;max-width:min(340px,80vw);padding:10px 12px;border-radius:4px;background:#000;color:#fff;text-align:left;white-space:normal;opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .15s,transform .15s,visibility 0s .15s;pointer-events:none}
 .hint:hover .hint-tx,.hint.open .hint-tx,.hint-i:focus-visible+.hint-tx{opacity:1;visibility:visible;transform:none;transition:opacity .15s,transform .15s}
 .sec-title .hint{order:1}
-.fi-lbl.has-hint{display:flex;align-items:center;gap:10px}
-.fi-lbl .hint{margin:-5px 0 -5px auto}
+/* в строке подписи — маленький кружок сразу за текстом, подсказка выезжает вправо от него */
+.fi-lbl.has-hint{display:flex;align-items:center;gap:6px}
+.fi-lbl .hint-i{width:16px;height:16px;font-size:10px;line-height:16px}
+.fi-lbl .hint-tx{right:auto;left:-6px}
 .sec-desc{font-size:14px;color:#000;line-height:1.45;margin-bottom:22px}
 /* ── Подзаголовок в настройках (тот же стиль, что заголовок) ── */
 .sec-sub{font-size:24px;font-weight:500;display:flex;align-items:center;gap:16px;margin:28px 0 18px}

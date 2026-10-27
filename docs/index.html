@@ -99,7 +99,9 @@ td{padding:7px 10px 7px 0;border-bottom:1px solid var(--mid);vertical-align:top}
 td:first-child{white-space:nowrap}
 figure{margin:18px 0}
 figure img,figure svg{display:block;max-width:100%;height:auto}
-figure.frame img{border:1px solid #000;border-radius:4px;background:#fff}
+/* картинки на прозрачном фоне (tools/docs_img.py) — под ними фон страницы; рамка с полями */
+figure.frame img{border:1px solid #000;border-radius:4px;padding:24px;box-sizing:border-box}
+figure img.on-page{mix-blend-mode:multiply}   /* белый фон рендера → фон страницы */
 figcaption{font-size:12px;color:var(--ink-soft);margin-top:8px;line-height:1.5}
 .screen{border-radius:50%;box-shadow:0 0 0 6px #111,0 0 0 7px #000,0 6px 18px rgba(0,0,0,.25)}
 .screens{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 22px;margin:20px 0}
@@ -152,6 +154,7 @@ figcaption{font-size:12px;color:var(--ink-soft);margin-top:8px;line-height:1.5}
   .body{padding:4px 18px 40px}
 }
 @media (max-width:760px){
+  figure.frame img{padding:12px}
   .toc ol{columns:1}
   .row2,.row2.wide-l,.anat,.scen{grid-template-columns:1fr}
   .anat-pic{margin:0 auto}
@@ -245,7 +248,7 @@ figcaption{font-size:12px;color:var(--ink-soft);margin-top:8px;line-height:1.5}
 <section id="build">
 <h2><span class="n">03</span> Сборка</h2>
 <figure>
-<img src="img/exploded_front.jpg" width="1400" alt="Взрыв-схема: передняя панель, дисплей, плата S2 Mini, зуммер, задняя часть">
+<img class="on-page" src="img/exploded_front.jpg" width="1400" alt="Взрыв-схема: передняя панель, дисплей, плата S2 Mini, зуммер, задняя часть">
 <figcaption>Из чего состоит Blin, слева направо: передняя панель, дисплей, плата S2 Mini, зуммер, задняя часть с кнопкой-дном.</figcaption>
 </figure>
 
@@ -305,7 +308,7 @@ figcaption{font-size:12px;color:var(--ink-soft);margin-top:8px;line-height:1.5}
 </ul>
 </div>
 <figure>
-<img src="img/exploded_back.jpg" width="1400" alt="Взрыв-схема сзади">
+<img class="on-page" src="img/exploded_back.jpg" width="1400" alt="Взрыв-схема сзади">
 <figcaption>Вид сзади: штифты и пазы на передней панели, зуммер, проём USB и решётка зуммера на задней части.</figcaption>
 </figure>
 </div>
@@ -369,7 +372,7 @@ figcaption{font-size:12px;color:var(--ink-soft);margin-top:8px;line-height:1.5}
 </div>
 <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start">
 <figure style="margin:0"><img class="screen" src="img/st_ap.png" width="240" height="240" alt="Экран AP-режима с QR-кодом"><figcaption>Экран в режиме AP: QR-код открытой сети устройства.</figcaption></figure>
-<figure class="frame" style="margin:0"><img src="img/ap_portal.jpg" width="520" alt="Портал настройки"><figcaption>Портал настройки на телефоне.</figcaption></figure>
+<figure class="frame" style="margin:0"><img src="img/ap_portal.png" width="390" alt="Портал настройки"><figcaption>Портал настройки на телефоне.</figcaption></figure>
 </div>
 </div>
 
@@ -525,7 +528,7 @@ actions:
 <h3>Служебные топики Blin</h3>
 <p>Кроме ваших топиков, Blin использует несколько своих — всё начинается с <code>blin/</code>. Трогать их не нужно, но полезно знать, что это не мусор:</p>
 <ul>
-<li><code>blin/devices/…</code> — «визитки» устройств для списка «Устройства Blin»;</li>
+<li><code>blin/devices/…</code> — «визитки» устройств для списка «Устройства в сети»;</li>
 <li><code>blin/leader/cfg</code> — настройки ведущего для ведомых;</li>
 <li><code>blin/sync/…</code> — после перезагрузки Blin спрашивает у соседей график за пропущенные часы, если они показывают тот же топик.</li>
 </ul>
@@ -537,11 +540,11 @@ actions:
 <h2><span class="n">09</span> Веб-админка</h2>
 <p>У каждого Blin есть своя страница управления. Откройте в браузере на телефоне или компьютере в той же сети:</p>
 <ul>
-<li><b>IP-адрес</b> устройства, например <code>http://192.168.1.33</code>. Его показывает экран при первом запуске, роутер в списке клиентов и любой другой Blin в блоке «Устройства Blin»;</li>
+<li><b>IP-адрес</b> устройства, например <code>http://192.168.1.33</code>. Его показывает экран при первом запуске, роутер в списке клиентов и любой другой Blin в блоке «Устройства в сети»;</li>
 <li>или <b>имя</b>: <code>http://blin-xxxxxx.local</code>. Имя задаётся в настройках, по умолчанию — <code>blin-</code> и хвост MAC-адреса.</li>
 </ul>
 <figure class="frame">
-<img src="img/admin_main.jpg" width="1600" alt="Главная страница админки">
+<img src="img/admin_main.png" width="1600" alt="Главная страница админки">
 <figcaption>Админка на компьютере. Сверху — вкладки экранов: название, температура (наведите мышь — выедут максимум и минимум за сутки), цветная полоса зоны, ★ у главного экрана. Справа «+» — добавить экран, шестерёнка — настройки устройства. Слева — открытый экран крупно и график за сутки с подписями часов. Справа — настройки этого экрана. Пояснения к полям спрятаны в чёрный кружок «i»: наведите на него мышь или нажмите.</figcaption>
 </figure>
 <div class="row2 wide-l">
@@ -555,7 +558,7 @@ actions:
 <p>На телефоне вкладки сворачиваются в меню ☰, а листать экраны можно и без него — свайпом влево-вправо по большой температуре. Админку можно <b>добавить на домашний экран</b> («На экран Домой» в Safari, «Установить приложение» в Chrome) — она откроется как отдельное приложение.</p>
 <p>Внизу страницы — три кнопки: «Обновление прошивки», «Импорт / Экспорт» и «Лог устройства» (последние 20 событий: подключения, ошибки, синхронизация).</p>
 </div>
-<figure class="frame"><img src="img/admin_mobile.jpg" width="780" alt="Админка на телефоне" style="max-width:300px;margin:0 auto"><figcaption style="text-align:center">Админка на телефоне.</figcaption></figure>
+<figure class="frame"><img src="img/admin_mobile.png" width="390" alt="Админка на телефоне" style="max-width:340px;margin:0 auto"><figcaption style="text-align:center">Админка на телефоне.</figcaption></figure>
 </div>
 </section>
 
@@ -655,14 +658,14 @@ actions:
 <section id="settings">
 <h2><span class="n">14</span> Настройки устройства</h2>
 <p>Шестерёнка справа от вкладок. Слева — меню разделов, справа — открытый раздел; админка запоминает, какой раздел был открыт. На телефоне меню — выпадающий список над разделом. Почти все изменения применяются кнопкой «Сохранить и перезагрузить» внизу — она сохраняет настройки <b>всех</b> разделов и изменённых экранов сразу, устройство перезагружается за несколько секунд.</p>
-<figure class="frame"><img src="img/admin_settings.jpg" width="1600" alt="Страница настроек: меню разделов и раздел Подключение" loading="lazy"><figcaption>Настройки: слева меню разделов, справа — «Подключение». Подробнее по разделам — ниже.</figcaption></figure>
+<figure class="frame"><img src="img/admin_settings.png" width="1600" alt="Страница настроек: меню разделов и раздел Подключение" loading="lazy"><figcaption>Настройки: слева меню разделов, справа — «Подключение». Подробнее по разделам — ниже.</figcaption></figure>
 
 <h3>Подключение</h3>
 <div class="row2">
 <figure class="frame" style="margin-top:4px"><img src="img/set_net.png" width="840" alt="Раздел Подключение" loading="lazy"></figure>
 <div>
 <p>Wi-Fi, MQTT-брокер, логин и пароль брокера — то же, что в <a href="#ap">портале</a>. Сохранённые пароли не показываются: пустое поле «Сохранён» значит «оставить как есть».</p>
-<p><b>Имя в сети</b> — по нему админка открывается как <code>http://имя.local</code>, его же видно в роутере и в списке «Устройства Blin». Латиница, цифры и дефис.</p>
+<p><b>Имя в сети</b> — по нему админка открывается как <code>http://имя.local</code>, его же видно в роутере и в списке «Устройства в сети». Латиница, цифры и дефис.</p>
 </div>
 </div>
 
@@ -682,7 +685,7 @@ actions:
 </div>
 
 <h3>Скриншот с устройства</h3>
-<p>Раздел показывает, что сейчас на экране Blin, — удобно, если устройство в другой комнате. Снимок делается, когда вы открываете раздел. Стрелки ← → переключают экраны устройства прямо отсюда, «Обновить» делает новый снимок.</p>
+<p>Раздел показывает, что сейчас на экране Blin, — удобно, если устройство в другой комнате. Снимок делается, когда вы открываете раздел. «Предыдущий экран» и «Следующий экран» (на телефоне — стрелки ← →) переключают экраны устройства прямо отсюда, «Обновить» делает новый снимок.</p>
 
 <h3>Аудио</h3>
 <ul>
@@ -696,7 +699,7 @@ actions:
 <div>
 <p><b>Администратор</b> — логин и пароль для админки, см. <a href="#auth">Пароль и гостевой режим</a>.</p>
 <p><b>Локализация</b> — язык админки и надписей на экране устройства.</p>
-<p><b>Синхронизация</b> и <b>Устройства Blin</b> — см. <a href="#lead">Ведущий и ведомые</a>.</p>
+<p><b>Синхронизация</b> и <b>Устройства в сети</b> — см. <a href="#lead">Ведущий и ведомые</a>.</p>
 </div>
 </div>
 <p>Внизу — <b>«Сбросить все настройки»</b>: то же, что удержание кнопки 5 секунд. Стирает всё, включая Wi-Fi, и переводит Blin в режим AP.</p>
@@ -755,7 +758,7 @@ actions:
 <li>История на ведомом сохраняется, если не поменялись число экранов и их топики. Иначе график начнётся заново.</li>
 <li>Ведущий может быть выключен: ведомые помнят последние полученные настройки, а брокер хранит их до его возвращения.</li>
 </ul>
-<h3>Устройства Blin</h3>
+<h3>Устройства в сети</h3>
 <p>Блок в настройках показывает все Blin на том же брокере: имя, IP-адрес (ссылкой — в один клик к админке соседа), версию прошивки, роль и состояние. Зелёная точка — в сети, серая — давно не выходил на связь, красная — выключен. Список обновляется сам.</p>
 <p>Устройство, которое вы больше не используете, остаётся в списке как «выключено». Чтобы убрать его совсем, удалите его retained-запись на брокере:</p>
 <pre><code>mosquitto_pub -h 192.168.1.10 -t blin/devices/blin-XXXXXX -r -n</code></pre>
@@ -826,7 +829,7 @@ sudo tailscale up --advertise-routes=192.168.1.0/24</code></pre>
 <p>Названия пунктов в панели Cloudflare время от времени меняются; актуальная инструкция — в <a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/" target="_blank" rel="noopener">документации Cloudflare</a>.</p>
 <div class="note warn"><b>Проверить без домена</b> можно временным туннелем — команда выдаст случайный адрес <code>…trycloudflare.com</code>:
 <pre><code>cloudflared tunnel --url http://192.168.1.33</code></pre>Он открыт всем, у кого есть ссылка, и защиты входом у него нет — проверили и сразу закройте (<kbd>Ctrl</kbd>+<kbd>C</kbd>).</div>
-<p>Через туннель ссылки на соседние Blin в блоке «Устройства Blin» ведут на домашние адреса и снаружи не откроются. Через VPN они работают.</p>
+<p>Через туннель ссылки на соседние Blin в блоке «Устройства в сети» ведут на домашние адреса и снаружи не откроются. Через VPN они работают.</p>
 
 <h3>Если посетителей слишком много</h3>
 <p>Blin обслуживает клиентов по очереди, по одному. Чтобы наплыв не остановил устройство, у него есть ограничитель:</p>
